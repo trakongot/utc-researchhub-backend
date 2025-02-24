@@ -1,3 +1,3 @@
 export * from './lecturec-preferences.controller';
-export * from './student-advisor-preferences.module';
-export * from './student-advisor-preferences.service';
+export * from './lecturec-preferences.module';
+export * from './lecturec-preferences.service';

@@ -13,7 +13,7 @@ import {
 import { LecturecPreferences } from '@prisma/client';
 import { ReqWithRequester } from 'src/share';
 import { CreateLecturecPreferencesDto } from './dto/create-lecturec-preferences.dto';
-import { LecturecPreferencesService } from './student-advisor-preferences.service';
+import { LecturecPreferencesService } from './lecturec-preferences.service';
 
 @Controller('allocation/lecturec-preferences')
 export class LecturecPreferencesController {
@@ -31,7 +31,9 @@ export class LecturecPreferencesController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  async get(@Param('id') id: string): Promise<Omit<LecturecPreferences, 'lecturerId'> | null> {
+  async get(
+    @Param('id') id: string,
+  ): Promise<Omit<LecturecPreferences, 'lecturerId'> | null> {
     return this.service.get(id);
   }
 

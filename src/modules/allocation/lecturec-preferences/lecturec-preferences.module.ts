@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common";
-import { LecturecPreferencesController } from "./lecturec-preferences.controller";
-import { LecturecPreferencesPrismaRepository } from "./student-advisor-preferences.repository";
-import { LecturecPreferencesService } from "./student-advisor-preferences.service";
+import { Module } from '@nestjs/common';
+import { LecturecPreferencesController } from './lecturec-preferences.controller';
+import { LecturecPreferencesPrismaRepository } from './lecturec-preferences.repository';
+import { LecturecPreferencesService } from './lecturec-preferences.service';
 
 @Module({
   controllers: [LecturecPreferencesController],
