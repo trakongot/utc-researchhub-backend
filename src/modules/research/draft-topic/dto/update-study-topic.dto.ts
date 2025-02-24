@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { draftTopicSchema } from '../schemas/draft-topic.schema';
+import { draftTopicSchema } from '../schemas';
 
 export const updateDraftTopicDtoSchema = draftTopicSchema
   .pick({

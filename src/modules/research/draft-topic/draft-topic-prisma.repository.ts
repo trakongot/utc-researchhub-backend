@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { UpdateDraftTopicDto } from './dto';
+import { IDraftTopicRepository } from './inteface';
 import { DraftTopic } from './schemas';
-import { IDraftTopicRepository } from './types';
 
 @Injectable()
 export class DraftTopicPrismaRepository implements IDraftTopicRepository {

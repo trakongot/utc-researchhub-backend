@@ -1,4 +1,4 @@
-import { UserT } from "@prisma/client";
+import { UserT } from '@prisma/client';
 
 export interface TokenPayload {
   sub: number;
@@ -14,8 +14,11 @@ export interface ReqWithRequesterOpt {
 }
 
 export interface ITokenProvider {
-  generateToken(payload: TokenPayload): Promise<string>;
-  verifyToken(token: string): Promise<TokenPayload | null>;
+  generateAccessToken(payload: TokenPayload): Promise<string>;
+  generateRefreshToken(payload: TokenPayload): Promise<string>;
+  verifyAccessToken(token: string): Promise<TokenPayload | null>;
+  verifyRefreshToken(token: string): Promise<TokenPayload | null>;
+  revokeRefreshToken(userId: number): Promise<void>;
 }
 
 export type TokenIntrospectResult = {
@@ -24,7 +27,12 @@ export type TokenIntrospectResult = {
   isOk: boolean;
 };
 
+export type RefreshTokenIntrospectResult = {
+  payload: TokenPayload | null;
+  error?: Error;
+  isOk: boolean;
+};
+
 export interface ITokenIntrospect {
   introspect(token: string): Promise<TokenIntrospectResult>;
 }
-
