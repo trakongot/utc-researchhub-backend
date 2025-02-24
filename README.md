@@ -6,9 +6,9 @@
 
 Mô hình Database: <a href="https://dbdiagram.io/d/utc-researchHub-67b8617c263d6cf9a0fd1194" target="blank">Xem tại đây</a>
 
-Tài liệu chi tiết: <a href="https://docs.google.com/document/d/1bQ0rWE2UWlkNvAOBxTDsI_eB6tWtGsMw1x09PDcz90M/edit?tab=t.0" target="blank">Google Docs</a>
+Luồng nghiệp vụ: <a href="https://lucid.app/lucidchart/eab150fd-8c7c-44c7-9295-d1a0ffda0567/edit?invitationId=inv_dcb80342-eff4-4871-bff1-a216a98a1bcc&page=s3TRBo1xwdz4#" target="blank">Xem tại đây</a>
 
-Luồng nghiệp vụ: <a href="https://lucid.app/lucidchart/eab150fd-8c7c-44c7-9295-d1a0ffda0567/edit?invitationId=inv_dcb80342-eff4-4871-bff1-a216a98a1bcc&page=s3TRBo1xwdz4#" target="blank">Google Docs</a>
+Tài liệu chi tiết: <a href="https://docs.google.com/document/d/1bQ0rWE2UWlkNvAOBxTDsI_eB6tWtGsMw1x09PDcz90M/edit?tab=t.0" target="blank">Google Docs</a>
 
 </p>
 
