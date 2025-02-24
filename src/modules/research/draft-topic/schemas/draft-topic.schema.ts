@@ -11,9 +11,9 @@ const ErrEnumValue = (field: string) => `${field} không hợp lệ.`;
 export const draftTopicSchema = z.object({
   id: z.string().uuid(ErrInvalidUUID('ID')),
   title: z.string().min(3, ErrMinLength('Tiêu đề', 3)),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   field: z.string().min(1, ErrRequired('Lĩnh vực')),
-  subField: z.string().optional(),
+  subField: z.string().nullable(),
 
   creatorId: z.string().uuid(ErrInvalidUUID('ID người tạo')),
   creatorType: z
@@ -30,7 +30,7 @@ export const draftTopicSchema = z.object({
   proposalOutlineId: z
     .string()
     .uuid(ErrInvalidUUID('ID đề cương đề xuất'))
-    .optional(), // UUID, có thể null
+    .optional(), 
   proposalDeadline: z
     .date({ invalid_type_error: ErrInvalidDate('Hạn nộp đề xuất') })
     .optional(),

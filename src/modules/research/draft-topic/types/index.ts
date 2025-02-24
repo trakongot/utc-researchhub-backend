@@ -1,1 +1,1 @@
-export * from './draft-topic.interface';
+export * from './draft-topic.inteface';

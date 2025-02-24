@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { UpdateDraftTopicDto } from './dto';
 import { DraftTopic } from './schemas';
 import { IDraftTopicRepository } from './types';
-import { UpdateDraftTopicDto } from './dto';
 
 @Injectable()
 export class DraftTopicPrismaRepository implements IDraftTopicRepository {
@@ -19,50 +19,15 @@ export class DraftTopicPrismaRepository implements IDraftTopicRepository {
 
     if (!draft) return null;
 
-    return {
-      id: draft.id,
-      title: draft.title,
-      description: draft.description || undefined,
-      field: draft.field,
-      subField: draft.subField || undefined,
-      status: draft.status,
-      proposalOutlineId: draft.proposalOutlineId || undefined,
-      proposalDeadline: draft.proposalDeadline || undefined,
-      topicLockDate: draft.topicLockDate || undefined,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-      creatorId: draft.creatorId,
-      creatorType: draft.creatorType,
-    };
+    return draft as DraftTopic;
   }
 
   async listByIds(ids: string[]): Promise<DraftTopic[]> {
     const drafts = await this.prisma.draftTopic.findMany({
       where: { id: { in: ids } },
-      include: {
-        members: true,
-        DraftTopicComment: true,
-      },
     });
 
-    return drafts.map((draft) => ({
-      id: draft.id,
-      title: draft.title,
-      description: draft.description || undefined,
-      field: draft.field,
-      subField: draft.subField || undefined,
-      status: draft.status,
-      proposalOutlineId: draft.proposalOutlineId || undefined,
-      proposalDeadline: draft.proposalDeadline || undefined,
-      topicLockDate: draft.topicLockDate || undefined,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-      creatorId: draft.creatorId,
-      creatorType: draft.creatorType,
-      studentsId: draft.studentsId || undefined,
-      members: draft.members || undefined,
-      comments: draft.DraftTopicComment || undefined,
-    }));
+    return drafts as DraftTopic[];
   }
 
   async insert(dto: DraftTopic): Promise<void> {
