@@ -4,9 +4,15 @@ import { AppService } from './app.service';
 import { LecturecPreferencesModule } from './modules/allocation';
 import { AllocationModule } from './modules/allocation/allocation.module';
 import { DraftTopicModule } from './modules/research';
+import { StudentModule } from './modules/user/students/student.module';
 
 @Module({
-  imports: [DraftTopicModule, AllocationModule, LecturecPreferencesModule],
+  imports: [
+    DraftTopicModule,
+    AllocationModule,
+    LecturecPreferencesModule,
+    StudentModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
