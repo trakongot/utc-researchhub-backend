@@ -1,14 +1,16 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { LecturerPreferences } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import prisma from 'src/components/prisma';
-import { Paginated } from 'src/share';
+import {
+  createdResponse,
+  deletedResponse,
+  errorResponse,
+  forbiddenResponse,
+  notFoundResponse,
+  Paginated,
+  successPaginatedResponse,
+  successResponse,
+} from 'src/share';
 import { uuidv7 } from 'uuidv7';
 import { CreateLecturerPreferencesDto } from './dto';
 import { FindLecturerPreferencesDto } from './dto/find-lecturer-preferences.dto';
@@ -18,15 +20,7 @@ import { UpdateLecturerPreferencesDto } from './dto/update-lecturer-preferences.
 export class LecturerPreferencesService {
   private readonly logger = new Logger(LecturerPreferencesService.name);
 
-  async get(id: string): Promise<{
-    id: string;
-    position: number;
-    topicTitle: string;
-    description: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    field: { id: string; name: string };
-  } | null> {
+  async get(id: string) {
     try {
       const lecturerPreference = await prisma.lecturerPreferences.findUnique({
         where: { id },
@@ -37,168 +31,131 @@ export class LecturerPreferencesService {
           description: true,
           createdAt: true,
           updatedAt: true,
-          field: {
-            select: { id: true, name: true },
-          },
-        },
-      });
-      return lecturerPreference;
-    } catch (error) {
-      console.error('Lỗi khi lấy lecturer preference:', error);
-      throw new Error('Lỗi khi lấy lecturer preference');
-    }
-  }
-
-  async listByLecturer(
-    lecturerId: string,
-    page: number,
-    limit: number,
-  ): Promise<
-    Paginated<{
-      id: string;
-      position: number;
-      topicTitle: string;
-      description: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-      field: { id: string; name: string };
-    }>
-  > {
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await prisma.$transaction([
-      prisma.lecturerPreferences.findMany({
-        where: { lecturerId },
-        select: {
-          id: true,
-          position: true,
-          topicTitle: true,
-          description: true,
-          createdAt: true,
-          updatedAt: true,
           field: { select: { id: true, name: true } },
         },
-        skip,
-        take: limit,
-      }),
-      prisma.lecturerPreferences.count({
-        where: { lecturerId },
-      }),
-    ]);
-
-    return {
-      data,
-      paging: { page, limit },
-      total,
-    };
+      });
+      if (!lecturerPreference) {
+        return notFoundResponse(`Không tìm thấy preference với id: ${id}`);
+      }
+      return successResponse(lecturerPreference);
+    } catch (error) {
+      this.logger.error('Lỗi khi lấy lecturer preference:', error);
+      return errorResponse('Lỗi khi lấy lecturer preference');
+    }
   }
 
   async searchByField(
     dto: FindLecturerPreferencesDto,
     page: number,
     limit: number,
-  ): Promise<
-    Paginated<{
-      id: string;
-      position: number;
-      topicTitle: string;
-      description: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-      field: { id: string; name: string };
-    }>
-  > {
-    const skip = (page - 1) * limit;
-    const whereClause: any = {};
-    if (dto.fieldId) whereClause.fieldId = dto.fieldId;
-    if (dto.lecturerId) whereClause.lecturerId = dto.lecturerId;
-    if (dto.keyword) {
-      whereClause.topicTitle = {
-        contains: dto.keyword,
-        mode: 'insensitive',
+  ) {
+    try {
+      const whereClause: Prisma.LecturerPreferencesWhereInput = {
+        ...(dto.lecturerIds?.length
+          ? { lecturerId: { in: dto.lecturerIds } }
+          : dto.lecturerId
+            ? { lecturerId: dto.lecturerId }
+            : {}),
+        ...(dto.fieldIds?.length
+          ? { fieldId: { in: dto.fieldIds } }
+          : dto.fieldId
+            ? { fieldId: dto.fieldId }
+            : {}),
+        ...(dto.keyword && {
+          topicTitle: { contains: dto.keyword, mode: 'insensitive' as const },
+        }),
       };
-    }
 
-    const [data, total] = await prisma.$transaction([
-      prisma.lecturerPreferences.findMany({
-        where: whereClause,
-        select: {
-          id: true,
-          position: true,
-          topicTitle: true,
-          description: true,
-          createdAt: true,
-          updatedAt: true,
-          field: { select: { id: true, name: true } },
+      const orderByField = dto.orderBy || 'createdAt';
+      const orderDirection: Prisma.SortOrder =
+        dto.asc == 'asc' ? 'asc' : 'desc';
+      const orderBy: Prisma.LecturerPreferencesOrderByWithRelationInput[] = [
+        { [orderByField]: orderDirection },
+      ];
+      const pagination: { skip: number; cursor?: { id: string } } = dto.lastId
+        ? { cursor: { id: dto.lastId }, skip: 1 }
+        : { skip: (page - 1) * limit };
+
+      const [data, total] = await Promise.all([
+        prisma.lecturerPreferences.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            lecturerId: true,
+            position: true,
+            topicTitle: true,
+            description: true,
+            createdAt: true,
+            updatedAt: true,
+            field: {
+              select: {
+                id: true,
+                name: true,
+                parent: { select: { id: true, name: true } },
+              },
+            },
+          },
+          take: limit,
+          ...pagination,
+          orderBy,
+        }),
+        prisma.lecturerPreferences.count({ where: whereClause }),
+      ]);
+
+      const paginated: Paginated<(typeof data)[number]> = {
+        data,
+        paging: {
+          page,
+          limit,
         },
-        skip,
-        take: limit,
-      }),
-      prisma.lecturerPreferences.count({ where: whereClause }),
-    ]);
+        total,
+      };
 
-    return {
-      data,
-      paging: { page, limit },
-      total,
-    };
+      const newLastId = data.length > 0 ? data[data.length - 1].id : null;
+
+      return successPaginatedResponse(paginated, newLastId);
+    } catch (error) {
+      this.logger.error('Lỗi khi tìm kiếm lecturer preferences:', error);
+      return errorResponse('Lỗi khi tìm kiếm lecturer preferences');
+    }
   }
 
-  async create(
-    dto: CreateLecturerPreferencesDto,
-    requesterId: string,
-  ): Promise<string> {
+  async create(dto: CreateLecturerPreferencesDto, requesterId: string) {
     const id = uuidv7();
-
-    const lecturer = await prisma.facultyMembers.findUnique({
-      where: { id: requesterId },
-    });
-
-    if (!lecturer) {
-      throw new BadRequestException(
-        `Giảng viên với ID ${requesterId} không tồn tại.`,
-      );
-    }
-    const existingTopic = await prisma.lecturerPreferences.findFirst({
-      where: {
-        lecturerId: requesterId,
-        fieldId: dto.fieldId,
-        NOT: { lecturerId: requesterId },
-      },
-    });
-
-    if (existingTopic) {
-      throw new BadRequestException(
-        `Bạn đã đăng ký đề tài "${dto.topicTitle}" rồi. Không thể đăng ký lại!`,
-      );
-    }
-
     try {
-      await prisma.$transaction(async (tx) => {
-        await tx.lecturerPreferences.create({
+      const result = await prisma.$transaction(async (tx) => {
+        const [lecturer, existingTopic] = await Promise.all([
+          tx.facultyMembers.findUnique({ where: { id: requesterId } }),
+          tx.lecturerPreferences.findFirst({
+            where: { lecturerId: requesterId, topicTitle: dto.topicTitle },
+          }),
+        ]);
+
+        if (!lecturer || existingTopic) {
+          return errorResponse(
+            !lecturer
+              ? `Giảng viên với ID ${requesterId} không tồn tại`
+              : `Bạn đã đăng ký đề tài "${dto.topicTitle}" rồi. Không thể đăng ký lại!`,
+            400,
+          );
+        }
+
+        const newPreference = await tx.lecturerPreferences.create({
           data: {
+            id,
             ...dto,
             lecturerId: requesterId,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         });
-        this.logger.log(
-          `Đã tạo preferences với id: ${id} bởi giảng viên: ${requesterId}`,
-        );
-      });
 
-      return id;
+        return newPreference;
+      });
+      return createdResponse(result);
     } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          `Lỗi ràng buộc khóa ngoại: Giảng viên với ID ${requesterId} không tồn tại.`,
-        );
-      }
-      throw error;
+      this.logger.error('Lỗi khi tạo lecturer preference:', error);
+      return errorResponse('Lỗi khi tạo lecturer preference');
     }
   }
 
@@ -206,61 +163,77 @@ export class LecturerPreferencesService {
     id: string,
     dto: UpdateLecturerPreferencesDto,
     requesterId: string,
-  ): Promise<LecturerPreferences> {
-    return prisma.$transaction(async (tx) => {
-      const existing = await tx.lecturerPreferences.findUnique({
-        where: { id },
-      });
+  ) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const [existing, lecturer] = await Promise.all([
+          tx.lecturerPreferences.findUnique({ where: { id } }),
+          tx.facultyMembers.findUnique({ where: { id: requesterId } }),
+        ]);
 
-      if (!existing) {
-        throw new NotFoundException(`Không tìm thấy preferences với id: ${id}`);
-      }
-      if (existing.lecturerId !== requesterId) {
-        throw new ForbiddenException(
-          'Bạn không có quyền chỉnh sửa preferences này.',
-        );
-      }
-      const lecturer = await tx.facultyMembers.findUnique({
-        where: { id: requesterId },
-      });
+        if (!existing)
+          return notFoundResponse(`Không tìm thấy preference với id: ${id}`);
+        if (existing.lecturerId !== requesterId)
+          return forbiddenResponse(
+            'Bạn không có quyền chỉnh sửa preference này',
+          );
+        if (!lecturer)
+          return errorResponse(
+            `Giảng viên với ID ${requesterId} không tồn tại`,
+            400,
+          );
 
-      if (!lecturer) {
-        throw new BadRequestException(
-          `Giảng viên với ID ${requesterId} không tồn tại.`,
-        );
-      }
-      const existingTopic = await tx.lecturerPreferences.findFirst({
-        where: {
-          lecturerId: requesterId,
-          topicTitle: dto.topicTitle,
-        },
-      });
+        if (dto.topicTitle && dto.topicTitle !== existing.topicTitle) {
+          const existingTopic = await tx.lecturerPreferences.findFirst({
+            where: { lecturerId: requesterId, topicTitle: dto.topicTitle },
+          });
 
-      if (existingTopic) {
-        throw new BadRequestException(
-          `Bạn đã đăng ký đề tài "${dto.topicTitle}" rồi. Không thể đăng ký lại!`,
-        );
-      }
-      const updated = await tx.lecturerPreferences.update({
-        where: { id },
-        data: { ...dto, updatedAt: new Date() },
-      });
+          if (existingTopic) {
+            return errorResponse(
+              `Bạn đã đăng ký đề tài "${dto.topicTitle}" rồi. Không thể đăng ký lại!`,
+              400,
+            );
+          }
+        }
 
-      this.logger.log(`Đã cập nhật preferences với id: ${id}`);
-      return updated;
-    });
+        const updated = await tx.lecturerPreferences.update({
+          where: { id },
+          data: { ...dto, updatedAt: new Date() },
+        });
+
+        this.logger.log(`Đã cập nhật preference với id: ${id}`);
+        return successResponse(updated, 'Cập nhật thành công');
+      });
+      return createdResponse(result);
+    } catch (error) {
+      this.logger.error(
+        `Lỗi khi cập nhật lecturer preference với id ${id}:`,
+        error,
+      );
+      return errorResponse('Lỗi khi cập nhật lecturer preference');
+    }
   }
 
-  async delete(id: string): Promise<void> {
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.lecturerPreferences.findUnique({
-        where: { id },
-      });
-      if (!existing)
-        throw new Error(`Không tìm thấy preferences với id: ${id}`);
+  async delete(id: string) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.lecturerPreferences.findUnique({
+          where: { id },
+        });
+        if (!existing) {
+          throw notFoundResponse(`Không tìm thấy preference với id: ${id}`);
+        }
 
-      await tx.lecturerPreferences.delete({ where: { id } });
-      this.logger.log(`Đã xóa preferences với id: ${id}`);
-    });
+        await tx.lecturerPreferences.delete({ where: { id } });
+        this.logger.log(`Đã xóa preference với id: ${id}`);
+      });
+      return deletedResponse();
+    } catch (error) {
+      if ('message' in error && 'statusCode' in error) {
+        return error;
+      }
+      this.logger.error('Lỗi khi xóa lecturer preference:', error);
+      return errorResponse('Lỗi khi xóa lecturer preference');
+    }
   }
 }

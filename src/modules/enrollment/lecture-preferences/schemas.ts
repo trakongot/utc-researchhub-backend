@@ -6,13 +6,13 @@ import {
 import { z } from 'zod';
 
 export const lecturerPreferencesSchema = z.object({
+  // .uuid(ErrInvalidUUID('ID lĩnh vực')),
   id: z.string().uuid(ErrInvalidUUID('ID')).optional(),
   position: z.number().min(1, ErrRequired('Vị trí')),
   fieldId: z.string(),
-  // fieldId: z.string().uuid(ErrInvalidUUID('ID lĩnh vực')),
   topicTitle: z.string().min(3, ErrMinLength('Tiêu đề đề tài', 3)),
   description: z.string().nullable(),
-  lecturerId: z.string().uuid(ErrInvalidUUID('ID giảng viên')),
+  lecturerId: z.string(),
 });
 
 export type LecturerPreferences = z.infer<typeof lecturerPreferencesSchema>;

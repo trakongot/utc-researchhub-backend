@@ -6,10 +6,10 @@ import { config } from './share';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configSwagger = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('Demo API')
+    .setDescription('')
     .setVersion('1.0')
-    .addTag('cats')
+    .addTag('')
     .build();
   const documentFactory = () =>
     SwaggerModule.createDocument(app, configSwagger);

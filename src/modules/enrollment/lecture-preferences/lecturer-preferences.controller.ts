@@ -38,8 +38,8 @@ export class LecturerPreferencesController {
     @Body(new ZodValidationPipe(createLecturerPreferencesDtoSchema))
     dto: CreateLecturerPreferencesDto,
     @Request() req: ReqWithRequester,
-  ): Promise<{ id: string }> {
-    return { id: await this.service.create(dto, '1') };
+  ) {
+    return await this.service.create(dto, '1');
   }
 
   @Get(':id')
@@ -50,38 +50,20 @@ export class LecturerPreferencesController {
     return result;
   }
 
-  @Get('/lecturers/:lecturerId')
-  @HttpCode(HttpStatus.OK)
-  async listByLecturer(
-    @Param('lecturerId') lecturerId: string,
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
-  ) {
-    return this.service.listByLecturer(
-      lecturerId,
-      Number(page) || 1,
-      Number(limit) || 20,
-    );
-  }
-
   @Get('')
   @HttpCode(HttpStatus.OK)
+  @ApiQuery({ name: 'fieldId', required: false })
+  @ApiQuery({ name: 'keyword', required: false })
+  @ApiQuery({ name: 'lecturerId', required: false })
+  @ApiQuery({ name: 'asc', required: false, enum: ['asc', 'desc'] })
   @ApiQuery({
-    name: 'fieldId',
+    name: 'orderBy',
     required: false,
+    enum: ['createdAt', 'updatedAt', 'position'],
   })
-  @ApiQuery({
-    name: 'keyword',
-    required: false,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-  })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'lastId', required: false })
   async searchByField(
     @Query(new ZodValidationPipe(findLecturerPreferencesDtoSchema))
     query: FindLecturerPreferencesDto,
@@ -89,7 +71,7 @@ export class LecturerPreferencesController {
     @Query('limit') limit = '20',
   ) {
     return this.service.searchByField(
-      query,
+      { ...query },
       Number(page) || 1,
       Number(limit) || 20,
     );
