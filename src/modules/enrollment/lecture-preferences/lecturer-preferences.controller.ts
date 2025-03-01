@@ -23,7 +23,7 @@ import {
 import {
   UpdateLecturerPreferencesDto,
   updateLecturerPreferencesDtoSchema,
-} from './dto/update-lecturer-preferences.dto';
+} from './dto/update.dto';
 import { LecturerPreferencesService } from './lecturer-preferences.service';
 
 @ApiTags('Lecturer Preferences')
@@ -64,16 +64,15 @@ export class LecturerPreferencesController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'lastId', required: false })
-  async searchByField(
+  @ApiQuery({ name: 'departmentId', required: false })
+  async find(
     @Query(new ZodValidationPipe(findLecturerPreferencesDtoSchema))
     query: FindLecturerPreferencesDto,
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
   ) {
-    return this.service.searchByField(
+    return this.service.find(
       { ...query },
-      Number(page) || 1,
-      Number(limit) || 20,
+      Number(query.page) || 1,
+      Number(query.limit) || 20,
     );
   }
 

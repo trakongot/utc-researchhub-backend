@@ -16,10 +16,3 @@ export const lecturerPreferencesSchema = z.object({
 });
 
 export type LecturerPreferences = z.infer<typeof lecturerPreferencesSchema>;
-
-export const lecturerPreferencesUpdateSchema =
-  lecturerPreferencesSchema.partial();
-
-export type LecturerPreferencesUpdate = z.infer<
-  typeof lecturerPreferencesUpdateSchema
->;

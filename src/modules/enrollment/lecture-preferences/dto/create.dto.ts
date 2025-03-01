@@ -1,5 +1,5 @@
-import { createZodDto } from 'nestjs-zod';
-import { lecturerPreferencesSchema } from '../schemas';
+import { z } from 'zod';
+import { lecturerPreferencesSchema } from '../schema';
 
 export const createLecturerPreferencesDtoSchema = lecturerPreferencesSchema
   .pick({
@@ -15,7 +15,6 @@ export const createLecturerPreferencesDtoSchema = lecturerPreferencesSchema
     topicTitle: true,
     lecturerId: true,
   });
-
-export class CreateLecturerPreferencesDto extends createZodDto(
-  createLecturerPreferencesDtoSchema,
-) {}
+export type CreateLecturerPreferencesDto = z.infer<
+  typeof createLecturerPreferencesDtoSchema
+>;

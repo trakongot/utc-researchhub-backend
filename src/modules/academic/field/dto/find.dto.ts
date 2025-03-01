@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FieldSchema } from '../schemas';
+import { FieldSchema } from '../schema';
 
 export const findFieldDtoSchema = FieldSchema.pick({
   name: true,
@@ -11,7 +11,8 @@ export const findFieldDtoSchema = FieldSchema.pick({
     orderBy: z.string(),
     asc: z.enum(['asc', 'desc']),
     lastId: z.string(),
+    page: z.number().min(1),
+    limit: z.number().max(100),
   })
   .partial();
 export type FindFieldDto = z.infer<typeof findFieldDtoSchema>;
-// export class FindFieldDto extends createZodDto(findFieldDtoSchema) {}

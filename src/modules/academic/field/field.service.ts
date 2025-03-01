@@ -11,9 +11,9 @@ import {
   successResponse,
 } from 'src/share';
 import { uuidv7 } from 'uuidv7';
-import { CreateFieldDto } from './dto/create-field.dto';
-import { FindFieldDto } from './dto/find-field.dto';
-import { UpdateFieldDto } from './dto/update-field.dto';
+import { CreateFieldDto } from './dto/create.dto';
+import { FindFieldDto } from './dto/find.dto';
+import { UpdateFieldDto } from './dto/update.dto';
 
 @Injectable()
 export class FieldService {
@@ -35,7 +35,7 @@ export class FieldService {
     }
   }
 
-  async find(dto: FindFieldDto, page: number, limit: number) {
+  async searchByField(dto: FindFieldDto, page: number, limit: number) {
     try {
       const whereClause: Prisma.FieldWhereInput = {
         ...(dto.name

@@ -13,8 +13,8 @@ import {
 } from 'src/share';
 import { uuidv7 } from 'uuidv7';
 import { CreateLecturerPreferencesDto } from './dto';
-import { FindLecturerPreferencesDto } from './dto/find-lecturer-preferences.dto';
-import { UpdateLecturerPreferencesDto } from './dto/update-lecturer-preferences.dto';
+import { FindLecturerPreferencesDto } from './dto/find.dto';
+import { UpdateLecturerPreferencesDto } from './dto/update.dto';
 
 @Injectable()
 export class LecturerPreferencesService {
@@ -44,11 +44,7 @@ export class LecturerPreferencesService {
     }
   }
 
-  async searchByField(
-    dto: FindLecturerPreferencesDto,
-    page: number,
-    limit: number,
-  ) {
+  async find(dto: FindLecturerPreferencesDto, page: number, limit: number) {
     try {
       const whereClause: Prisma.LecturerPreferencesWhereInput = {
         ...(dto.lecturerIds?.length
@@ -64,6 +60,9 @@ export class LecturerPreferencesService {
         ...(dto.keyword && {
           topicTitle: { contains: dto.keyword, mode: 'insensitive' as const },
         }),
+        ...(dto.departmentId
+          ? { student: { departmentId: dto.departmentId } }
+          : {}),
       };
 
       const orderByField = dto.orderBy || 'createdAt';

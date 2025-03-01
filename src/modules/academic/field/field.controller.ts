@@ -14,9 +14,14 @@ import {
 import { ApiBearerAuth, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ReqWithRequester } from 'src/share';
 import { ZodValidationPipe } from 'src/share/zod-validation.pipe';
-import { CreateFieldDto, createFieldDtoSchema } from './dto/create-field.dto';
-import {  FindFieldDto, findFieldDtoSchema } from './dto/find-field.dto';
-import { UpdateFieldDto, updateFieldDtoSchema } from './dto/update-field.dto';
+import {
+  CreateFieldDto,
+  createFieldDtoSchema,
+  FindFieldDto,
+  findFieldDtoSchema,
+  UpdateFieldDto,
+  updateFieldDtoSchema,
+} from './dto';
 import { FieldService } from './field.service';
 
 @ApiTags('Fields')
@@ -47,16 +52,18 @@ export class FieldController {
   @ApiQuery({ name: 'name', required: false })
   @ApiQuery({ name: 'parentId', required: false })
   @ApiQuery({ name: 'orderBy', required: false, enum: ['name'] })
-  @ApiQuery({ name: 'asc', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({ name: 'asc', required: false, enum: ['asc', 'desc', '1'] })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'lastId', required: false })
   async find(
     @Query(new ZodValidationPipe(findFieldDtoSchema)) query: FindFieldDto,
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
   ) {
-    return this.service.find(query, Number(page) || 1, Number(limit) || 20);
+    return this.service.searchByField(
+      query,
+      Number(query.page) || 1,
+      Number(query.limit) || 20,
+    );
   }
 
   @Patch(':id')

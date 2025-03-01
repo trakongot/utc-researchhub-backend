@@ -151,7 +151,6 @@ model FacultyRoles {
 
 // --------------------------- LOG SYSTEM ------------------------
 
-
 model SystemLog {
   id         String   @id
   entityType String   @map("entity_type") // Ví dụ: "PROJECT", "TASK", "SYSTEM_CONFIG"
@@ -230,15 +229,15 @@ model Field {
 }
 
 model LecturerPreferences {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   position    Int
   topicTitle  String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  lecturer   FacultyMembers @relation(fields: [lecturerId], references: [id])
-  lecturerId String         @map("lecturer_id")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  isActive    Boolean        @default(true)
+  lecturer    FacultyMembers @relation(fields: [lecturerId], references: [id])
+  lecturerId  String         @map("lecturer_id")
 
   field   Field  @relation(fields: [fieldId], references: [id])
   fieldId String @map("field_id")
@@ -247,23 +246,29 @@ model LecturerPreferences {
   @@index([lecturerId, fieldId])
 }
 
+enum StudentAdvisingPreferencesStatusT {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model StudentAdvisingPreferences {
-  id          String   @id @default(uuid())
-  preferredAt DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  student   Students @relation(fields: [studentId], references: [id])
-  studentId String   @map("student_id")
-
+  id          String                            @id @default(uuid())
+  preferredAt DateTime                          @default(now())
+  createdAt   DateTime                          @default(now())
+  updatedAt   DateTime                          @updatedAt
+  status      StudentAdvisingPreferencesStatusT @default(PENDING)
+  student         Students       @relation(fields: [studentId], references: [id])
+  studentId       String         @map("student_id")
   facultyMember   FacultyMembers @relation(fields: [facultyMemberId], references: [id])
   facultyMemberId String         @map("faculty_member_id")
-
-  field   Field  @relation(fields: [fieldId], references: [id])
-  fieldId String @map("field_id")
+  field           Field          @relation(fields: [fieldId], references: [id])
+  fieldId         String         @map("field_id")
 
   @@unique([studentId, facultyMemberId, fieldId])
-  @@index([studentId, facultyMemberId, fieldId])
+  @@index([facultyMemberId])
+  @@index([studentId])
+  @@index([facultyMemberId, createdAt, status])
 }
 
 model GraduationProjectAllocations {
@@ -726,8 +731,6 @@ model EvaluationCriteria {
 }
 
 // --------------------------- NOTIFICATION SYSTEM ------------------------
-
-
 
 // -------------------- DOCUMENT SYSTEM FILES ------------------------
 
