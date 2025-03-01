@@ -1,15 +1,5 @@
 import z from 'zod';
 
-// export const publicUserSchema = z.object({
-//   id: z.string().uuid(),
-//   fullName: z.string(),
-//   bio: z.string().optional(),
-//   email: z.string(),
-//   profilePicture: z.string().url(),
-// });
-
-// export interface PublicUser extends z.infer<typeof publicUserSchema> {}
-
 export const pagingDTOSchema = z.object({
   page: z.coerce
     .number()

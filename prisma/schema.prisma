@@ -69,15 +69,15 @@ model Students {
   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
   departmentId String?              @map("department_id")
 
-  ProjectResultOutline                   ProjectResultOutline[]                   @relation
-  StudentAdvisorPreferences              StudentAdvisorPreferences[]              @relation
-  FacultyMemberGraduateProjectAllocation FacultyMemberGraduateProjectAllocation[] @relation
-  ProjectResultFile                      ProjectResultFile[]                      @relation
-  ProjectComment                         ProjectComment[]                         @relation
-  SystemLog                              SystemLog[]                              @relation
-  ProposalOutline                        ProposalOutline[]                        @relation
-  ProjectResultComment                   ProjectResultComment[]                   @relation
-  DraftTopic                             DraftTopic[]                             @relation("DraftTopicCreatedByStudent")
+  ProjectResultOutline         ProjectResultOutline[]         @relation
+  StudentAdvisingPreferences   StudentAdvisingPreferences[]   @relation
+  ProjectResultFile            ProjectResultFile[]            @relation
+  ProjectComment               ProjectComment[]               @relation
+  SystemLog                    SystemLog[]                    @relation
+  ProposalOutline              ProposalOutline[]              @relation
+  ProjectResultComment         ProjectResultComment[]         @relation
+  DraftTopics                  DraftTopics[]                  @relation("DraftTopicsCreatedByStudent")
+  GraduationProjectAllocations GraduationProjectAllocations[]
 
   @@index([studentCode, email, status])
 }
@@ -108,25 +108,25 @@ model FacultyMembers {
   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
   departmentId String?              @map("department_id")
 
-  SystemFiles                            SystemFiles[]                            @relation
-  DefenseMember                          DefenseMember[]                          @relation
-  ProjectEvaluationScore                 ProjectEvaluationScore[]                 @relation
-  ProjectEvaluation                      ProjectEvaluation[]                      @relation
-  ProjectResultFile                      ProjectResultFile[]                      @relation
-  FacultyRoles                           FacultyRoles[]                           @relation
-  EvaluationCriteria                     EvaluationCriteria[]                     @relation
-  StudentAdvisorPreferences              StudentAdvisorPreferences[]              @relation
-  LecturecPreferences                    LecturecPreferences[]                    @relation
-  FacultyMemberGraduateProjectAllocation FacultyMemberGraduateProjectAllocation[] @relation
-  ProjectComment                         ProjectComment[]                         @relation
-  ProjectResultOutline                   ProjectResultOutline[]                   @relation
-  Project                                Project[]                                @relation
-  SystemLog                              SystemLog[]                              @relation
-  ProposalOutline                        ProposalOutline[]                        @relation
-  ProjectResultComment                   ProjectResultComment[]                   @relation
-  createdDraftTopics                     DraftTopic[]                             @relation("DraftTopicCreatedByFaculty")
-  approvedDraftTopics                    DraftTopic[]                             @relation("DraftTopicApprovedByFaculty")
-  DefenseCommittee                       DefenseCommittee[]
+  SystemFiles                  SystemFiles[]                  @relation
+  DefenseMember                DefenseMember[]                @relation
+  ProjectEvaluationScore       ProjectEvaluationScore[]       @relation
+  ProjectEvaluation            ProjectEvaluation[]            @relation
+  ProjectResultFile            ProjectResultFile[]            @relation
+  FacultyRoles                 FacultyRoles[]                 @relation
+  EvaluationCriteria           EvaluationCriteria[]           @relation
+  StudentAdvisingPreferences   StudentAdvisingPreferences[]   @relation
+  ProjectComment               ProjectComment[]               @relation
+  ProjectResultOutline         ProjectResultOutline[]         @relation
+  Project                      Project[]                      @relation
+  SystemLog                    SystemLog[]                    @relation
+  ProposalOutline              ProposalOutline[]              @relation
+  ProjectResultComment         ProjectResultComment[]         @relation
+  createdDraftTopicss          DraftTopics[]                  @relation("DraftTopicsCreatedByFaculty")
+  approvedDraftTopicss         DraftTopics[]                  @relation("DraftTopicsApprovedByFaculty")
+  DefenseCommittee             DefenseCommittee[]
+  LecturerPreferences          LecturerPreferences[]
+  GraduationProjectAllocations GraduationProjectAllocations[]
 
   @@index([facultyCode, email, status])
 }
@@ -151,116 +151,6 @@ model FacultyRoles {
 
 // --------------------------- LOG SYSTEM ------------------------
 
-// model ProjectActivityLog {
-//   id           String               @id
-//   entityType   String               @map("entity_type") // "STUDY_TOPIC_DRAFT", "PROJECT"
-//   entityId     String               @map("entity_id")
-//   userId       String               @map("user_id")
-//   userType     UserT                @map("user_type")
-//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_student")
-//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_faculty")
-//   action       String               @map("action") // "CREATE", "UPDATE", "APPROVE", "REJECT"
-//   oldValue     String?              @map("old_value")
-//   newValue     String?              @map("new_value")
-//   createdAt    DateTime             @default(now()) @map("created_at")
-//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
-//   departmentId String?              @map("department_id") // Liên kết khoa
-
-//   @@index([entityType, entityId, createdAt])
-//   @@index([userId, departmentId, createdAt])
-// }
-
-// model ResultLog {
-//   id           String               @id
-//   entityId     String               @map("entity_id") // ID của ProjectResultOutline
-//   userId       String               @map("user_id")
-//   userType     UserT                @map("user_type")
-//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_result_log_student")
-//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_result_log_faculty")
-//   action       String               @map("action") // "SUBMIT", "UPDATE", "APPROVE"
-//   oldValue     String?              @map("old_value")
-//   newValue     String?              @map("new_value")
-//   createdAt    DateTime             @default(now()) @map("created_at")
-//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
-//   departmentId String?              @map("department_id")
-
-//   @@index([entityId, createdAt])
-//   @@index([userId, departmentId, createdAt])
-// }
-
-// model FacultyAssignmentLog {
-//   id           String               @id
-//   entityType   String               @map("entity_type") // "FACULTY_CHANGE", "DEFENSE_COMMITTEE"
-//   entityId     String               @map("entity_id") // ID của Project hoặc DefenseCommittee
-//   userId       String               @map("user_id") // Người thực hiện thay đổi
-//   userType     UserT                @map("user_type")
-//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_log_student")
-//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_faculty_assignment_log_faculty")
-//   action       String               @map("action") // "CHANGE_FACULTY", "ADD_MEMBER", "UPDATE_DATE"
-//   oldValue     String?              @map("old_value") // Ví dụ: ID giảng viên cũ, ngày cũ
-//   newValue     String?              @map("new_value") // Ví dụ: ID giảng viên mới, ngày mới
-//   reason       String?              @map("reason") // Lý do thay đổi (từ ProjectFacultyChangeLog)
-//   createdAt    DateTime             @default(now()) @map("created_at")
-//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
-//   departmentId String?              @map("department_id")
-
-//   @@index([entityType, entityId, createdAt])
-//   @@index([userId, departmentId, createdAt])
-// }
-
-// model TaskLog {
-//   id           String               @id
-//   entityType   String               @map("entity_type") // "TASK_PROJECT", "PERMISSION"
-//   entityId     String               @map("entity_id") // ID của TaskProject hoặc Project/TaskProject
-//   userId       String               @map("user_id")
-//   userType     UserT                @map("user_type")
-//   student      Students?            @relation(fields: [userId], references: [id], map: "fk_task_log_student")
-//   faculty      FacultyMembers?      @relation(fields: [userId], references: [id], map: "fk_task_log_faculty")
-//   action       String               @map("action") // "UPDATE_STATUS", "GRANT_PERMISSION", "REVOKE_PERMISSION"
-//   oldValue     String?              @map("old_value")
-//   newValue     String?              @map("new_value")
-//   createdAt    DateTime             @default(now()) @map("created_at")
-//   department   AcademicDepartments? @relation(fields: [departmentId], references: [id])
-//   departmentId String?              @map("department_id")
-
-//   @@index([entityType, entityId, createdAt])
-//   @@index([userId, departmentId, createdAt])
-// }
-
-// enum SystemInteractionActionT {
-//   // Hành động liên quan đến thông báo (NOTIFICATION)
-//   MARK_READ // Người dùng đánh dấu thông báo là đã đọc
-//   MARK_UNREAD // Đánh dấu lại thông báo là chưa đọc
-//   RESEND // Gửi lại thông báo
-//   NOTIFICATION_SENT // Thông báo được gửi lần đầu
-//   NOTIFICATION_EXPIRED // Thông báo hết hạn
-
-//   // Hành động liên quan đến cấu hình hệ thống (SYSTEM_CONFIG)
-//   UPDATE_DEADLINE // Cập nhật thời hạn (proposalDeadline, topicLockDate, v.v.)
-//   UPDATE_FILE_FORMAT // Cập nhật định dạng file cho phép
-//   UPDATE_SETTING // Cập nhật cấu hình chung khác
-//   CREATE_SETTING // Tạo mới một cấu hình
-//   DELETE_SETTING // Xóa một cấu hình
-// }
-
-// model SystemInteractionLog {
-//   id           String                  @id
-//   entityType   String                  @map("entity_type") // "NOTIFICATION", "SYSTEM_CONFIG"
-//   entityId     String?                 @map("entity_id") // ID của SystemNotification hoặc khóa cấu hình
-//   userId       String                  @map("user_id")
-//   userType     UserT                   @map("user_type")
-//   student      Students?               @relation(fields: [userId], references: [id], map: "fk_system_interaction_log_student")
-//   faculty      FacultyMembers?         @relation(fields: [userId], references: [id], map: "fk_system_interaction_log_faculty")
-//   action       SystemInteractionAction @map("action")
-//   oldValue     String?                 @map("old_value")
-//   newValue     String?                 @map("new_value")
-//   createdAt    DateTime                @default(now()) @map("created_at")
-//   department   AcademicDepartments?    @relation(fields: [departmentId], references: [id])
-//   departmentId String?                 @map("department_id") // Để lại cho thông báo theo khoa
-
-//   @@index([entityType, entityId, createdAt])
-//   @@index([userId, createdAt])
-// }
 
 model SystemLog {
   id         String   @id
@@ -305,7 +195,7 @@ enum DepartmentStatusT {
 }
 
 model AcademicDepartments {
-  id          String            @id
+  id          String            @id @default(uuid())
   code        String            @unique @map("code") @db.VarChar(50) // Mã khoa ngắn gọn
   name        String            @unique @map("name") @db.VarChar(255) // Tên khoa
   description String?           @map("description") // Mô tả khoa
@@ -326,55 +216,76 @@ model AcademicDepartments {
 
 // --------------------------- REGISTER MANAGEMENT ------------------------
 
-model LecturecPreferences {
-  id          String   @id
-  position    Int      @map("position")
-  field       String   @map("field") // Lĩnh vực mà giảng viên muốn hướng dẫn
-  subField    String?  @map("sub_field") // Chuyên ngành hoặc lĩnh vực con
-  topicTitle  String   @map("topic_title")
-  description String?  @map("description")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model Field {
+  id   String @id @default(uuid())
+  name String @unique @map("name")
+
+  parentId  String?
+  parent    Field?  @relation("FieldToSubField", fields: [parentId], references: [id])
+  subFields Field[] @relation("FieldToSubField")
+
+  lecturers   LecturerPreferences[]
+  students    StudentAdvisingPreferences[]
+  DraftTopics DraftTopics[]
+}
+
+model LecturerPreferences {
+  id          String   @id @default(uuid())
+  position    Int
+  topicTitle  String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   lecturer   FacultyMembers @relation(fields: [lecturerId], references: [id])
   lecturerId String         @map("lecturer_id")
 
-  @@index([lecturerId, topicTitle])
+  field   Field  @relation(fields: [fieldId], references: [id])
+  fieldId String @map("field_id")
+
+  @@unique([lecturerId, topicTitle])
+  @@index([lecturerId, fieldId])
 }
 
-model StudentAdvisorPreferences {
-  id          String   @id
-  topicTitle  String   @map("topic_title")
-  preferredAt DateTime @default(now()) @map("preferred_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model StudentAdvisingPreferences {
+  id          String   @id @default(uuid())
+  preferredAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  student         Students       @relation(fields: [studentId], references: [id])
-  studentId       String         @map("student_id")
+  student   Students @relation(fields: [studentId], references: [id])
+  studentId String   @map("student_id")
+
   facultyMember   FacultyMembers @relation(fields: [facultyMemberId], references: [id])
   facultyMemberId String         @map("faculty_member_id")
 
-  @@index([studentId, facultyMemberId, preferredAt])
+  field   Field  @relation(fields: [fieldId], references: [id])
+  fieldId String @map("field_id")
+
+  @@unique([studentId, facultyMemberId, fieldId])
+  @@index([studentId, facultyMemberId, fieldId])
 }
 
-model FacultyMemberGraduateProjectAllocation {
-  id          String   @id
-  topicTitle  String   @map("topic_title")
-  allocatedAt DateTime @default(now()) @map("allocated_at") // Thời gian phân công đồ án
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model GraduationProjectAllocations {
+  id          String   @id @default(uuid())
+  topicTitle  String
+  allocatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  student    Students       @relation(fields: [studentId], references: [id])
-  studentId  String         @map("student_id")
+  student   Students @relation(fields: [studentId], references: [id])
+  studentId String   @map("student_id")
+
   lecturer   FacultyMembers @relation(fields: [lecturerId], references: [id])
   lecturerId String         @map("lecturer_id")
 
+  @@unique([studentId, lecturerId, topicTitle])
   @@index([studentId, lecturerId, allocatedAt])
 }
 
 // --------------------------- REGISTER PROJECT ------------------------
 
-enum DraftTopicStatusT {
+enum DraftTopicsStatusT {
   PENDING_ADVISOR
   REQUESTED_CHANGES_ADVISOR
   REJECTED_BY_ADVISOR
@@ -384,44 +295,43 @@ enum DraftTopicStatusT {
   APPROVED_BY_HEAD
 }
 
-model DraftTopic {
-  id               String            @id
-  title            String            @map("title")
-  description      String?           @map("description")
-  field            String            @map("field")
-  subField         String?           @map("sub_field")
-  status           DraftTopicStatusT @default(PENDING_ADVISOR) @map("status")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  proposalDeadline DateTime?         @map("proposal_deadline")
-  topicLockDate    DateTime?         @map("topic_lock_date")
-  approvedAt       DateTime?         @map("approved_at")
+model DraftTopics {
+  id               String             @id
+  title            String             @map("title")
+  description      String?            @map("description")
+  status           DraftTopicsStatusT @default(PENDING_ADVISOR) @map("status")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  proposalDeadline DateTime?          @map("proposal_deadline")
+  topicLockDate    DateTime?          @map("topic_lock_date")
+  approvedAt       DateTime?          @map("approved_at")
 
-  members TopicMember[] @relation("DraftTopicMembers")
-
+  members           TopicMember[]    @relation("DraftTopicsMembers")
   proposalOutline   ProposalOutline? @relation(fields: [proposalOutlineId], references: [id])
   proposalOutlineId String?          @map("proposal_outline_id")
 
   creatorId        String          @map("creator_id")
   creatorType      UserT           @map("creator_type")
-  createdByStudent Students?       @relation("DraftTopicCreatedByStudent", fields: [creatorId], references: [id], map: "fk_draft_topic_student")
-  createdByfaculty FacultyMembers? @relation("DraftTopicCreatedByFaculty", fields: [creatorId], references: [id], map: "fk_draft_topic_faculty")
+  createdByStudent Students?       @relation("DraftTopicsCreatedByStudent", fields: [creatorId], references: [id], map: "fk_draft_topic_student")
+  createdByfaculty FacultyMembers? @relation("DraftTopicsCreatedByFaculty", fields: [creatorId], references: [id], map: "fk_draft_topic_faculty")
 
   approvedById String?         @map("approved_by_id")
-  approvedBy   FacultyMembers? @relation("DraftTopicApprovedByFaculty", fields: [approvedById], references: [id])
+  approvedBy   FacultyMembers? @relation("DraftTopicsApprovedByFaculty", fields: [approvedById], references: [id])
 
-  DraftTopicComment DraftTopicComment[]
-  studentsId        String?
+  DraftTopicsComment DraftTopicsComment[]
+  studentsId         String?
+  Fields             Field?               @relation(fields: [fieldsId], references: [id])
+  fieldsId           String?
 }
 
-model DraftTopicComment {
-  id           String     @id
-  DraftTopic   DraftTopic @relation(fields: [DraftTopicId], references: [id])
-  DraftTopicId String     @map("study_topic_darf_id")
-  commenterId  String?    @map("commenter_id")
-  role         UserT      @map("role")
-  content      String     @map("content")
-  createdAt    DateTime   @default(now()) @map("created_at")
+model DraftTopicsComment {
+  id            String      @id
+  DraftTopics   DraftTopics @relation(fields: [DraftTopicsId], references: [id])
+  DraftTopicsId String      @map("study_topic_darf_id")
+  commenterId   String?     @map("commenter_id")
+  role          UserT       @map("role")
+  content       String      @map("content")
+  createdAt     DateTime    @default(now()) @map("created_at")
 }
 
 enum ProposalStatusT {
@@ -447,8 +357,8 @@ model ProposalOutline {
   creatorStudent Students?       @relation(fields: [creatorId], references: [id], map: "fk_proposal_student")
   creatorFaculty FacultyMembers? @relation(fields: [creatorId], references: [id], map: "fk_proposal_faculty")
 
-  DraftTopic DraftTopic[]
-  Project    Project[]
+  DraftTopics DraftTopics[]
+  Project     Project[]
 }
 
 // ----------------------- MEMBER DRAFT TOPIC, PROJECT MANAGEMENT ------------------------
@@ -470,8 +380,8 @@ model TopicMember {
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
-  project    Project?    @relation("ProjectMembers", fields: [topicId], references: [id], map: "fk_topic_member_project", onDelete: NoAction, onUpdate: NoAction)
-  draftTopic DraftTopic? @relation("DraftTopicMembers", fields: [topicId], references: [id], map: "fk_topic_member_draft_topic", onDelete: NoAction, onUpdate: NoAction)
+  project     Project?     @relation("ProjectMembers", fields: [topicId], references: [id], map: "fk_topic_member_project", onDelete: NoAction, onUpdate: NoAction)
+  DraftTopics DraftTopics? @relation("DraftTopicsMembers", fields: [topicId], references: [id], map: "fk_topic_member_draft_topic", onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([topicId, memberId, topicType])
   @@index([topicId, memberId])
@@ -491,7 +401,6 @@ model Project {
   title             String           @map("title")
   description       String?          @map("description") // Mô tả đề tài
   field             String           @map("field") // Lĩnh vực/ngành
-  subField          String?          @map("sub_field") // Chuyên ngành nhỏ hơn
   status            ProjectStatusT   @default(IN_PROGRESS) @map("status")
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
@@ -651,7 +560,7 @@ model ProjectResultOutline {
   uploadedById         String?                @map("uploaded_by_id")
   uploadedByType       UserT?                 @map("uploaded_by_type")
   uploadByStudent      Students?              @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_student")
-  uploadByLecturec     FacultyMembers?        @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_faculty")
+  uploadByLecturer     FacultyMembers?        @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_faculty")
   ProjectResultComment ProjectResultComment[] @relation
   relatedFiles         ProjectResultFile[]    @relation
 
@@ -679,7 +588,7 @@ model ProjectResultFile {
 
   uploadedById     String?         @map("uploaded_by_id")
   uploadByStudent  Students?       @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_student")
-  uploadByLecturec FacultyMembers? @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_faculty")
+  uploadByLecturer FacultyMembers? @relation(fields: [uploadedById], references: [id], map: "fk_project_result_outline_faculty")
 
   @@index([resultOutlineId])
   @@index([isArchived])
@@ -818,59 +727,7 @@ model EvaluationCriteria {
 
 // --------------------------- NOTIFICATION SYSTEM ------------------------
 
-// enum NotificationT {
-//   TOPIC_SUBMISSION_APPROVED
-//   TOPIC_SUBMISSION_REJECTED
-//   TOPIC_EDIT_REQUEST
-//   TOPIC_ASSIGNMENT
-//   TOPIC_CHANGE_REQUEST
-//   TOPIC_REVIEW_REQUEST
-//   ADVISOR_ASSIGNMENT
-//   REVIEWER_ASSIGNMENT
-//   ADVISOR_CHANGE_REQUEST
-//   REVIEWER_CHANGE_REQUEST
-//   DEADLINE_REMINDER
-//   PROGRESS_UPDATE_REQUEST
-//   PROGRESS_REPORT_SUBMITTED
-//   FINAL_REPORT_SUBMITTED
-//   FINAL_PRESENTATION_SCHEDULED
-//   SYSTEM_UPDATE
-//   NEW_ANNOUNCEMENT
-//   COMMENT_REPLY
-// }
 
-// enum RelatedEntityT {
-//   STUDY_TOPIC
-//   PROPOSAL_OUTLINE
-//   DEFENSE_COMMITTEE
-//   OTHER
-// }
-
-// model SystemNotification {
-//   id                    String                  @id
-//   senderId              String?                 @map("sender_id") // Ai gửi thông báo
-//   senderType            UserT?                  @map("sender_type")
-//   type                  NotificationT           @map("type")
-//   message               String                  @map("message")
-//   entityType            RelatedEntityT          @map("entity_type") // "STUDY_TOPIC", "STUDY_TOPIC_RESULT"
-//   entityId              Int?                    @map("entity_id")
-//   createdAt             DateTime                @default(now()) @map("created_at")
-//   NotificationRecipient NotificationRecipient[] @relation
-
-//   @@index([entityType, entityId, createdAt])
-// }
-
-// model NotificationRecipient {
-//   id             String             @id
-//   notificationId String             @map("notification_id")
-//   notification   SystemNotification @relation(fields: [notificationId], references: [id])
-//   recipientId    String             @map("recipient_id") // Ai nhận thông báo
-//   recipientType  UserT              @map("recipient_type")
-//   isRead         Boolean            @default(false) @map("is_read")
-//   createdAt      DateTime           @default(now()) @map("created_at")
-
-//   @@index([recipientId, recipientType, isRead])
-// }
 
 // -------------------- DOCUMENT SYSTEM FILES ------------------------
 

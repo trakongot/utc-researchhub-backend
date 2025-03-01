@@ -1,7 +1,7 @@
 import { UserT } from '@prisma/client';
 
 export interface TokenPayload {
-  sub: number;
+  sub: string;
   role: UserT;
 }
 
