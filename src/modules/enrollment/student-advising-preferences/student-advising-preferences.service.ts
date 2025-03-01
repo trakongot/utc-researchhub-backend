@@ -42,7 +42,7 @@ export class StudentAdvisingPreferencesService {
     }
   }
 
-  async searchByField(
+  async find(
     dto: FindStudentAdvisingPreferencesDto,
     page: number,
     limit: number,

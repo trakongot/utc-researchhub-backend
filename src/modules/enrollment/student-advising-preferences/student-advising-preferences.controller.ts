@@ -62,7 +62,7 @@ export class StudentAdvisingPreferencesController {
     @Query(new ZodValidationPipe(findStudentAdvisingPreferencesDtoSchema))
     query: FindStudentAdvisingPreferencesDto,
   ) {
-    return this.service.searchByField(
+    return this.service.find(
       query,
       Number(query.page) || 1,
       Number(query.limit) || 20,
