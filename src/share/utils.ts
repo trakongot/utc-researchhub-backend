@@ -48,6 +48,14 @@ export const notFoundResponse = (
   statusCode: 404,
 });
 
+// Lỗi không thành công khi tạo tài nguyên
+export const errCreatedResponse = <T>(
+  message: string = 'Tạo không thành công',
+) => ({
+  message,
+  statusCode: 404,
+});
+
 // Lỗi không có quyền truy cập
 export const forbiddenResponse = (
   message: string = 'Bạn không có quyền thực hiện thao tác này',

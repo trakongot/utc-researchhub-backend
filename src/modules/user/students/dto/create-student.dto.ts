@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { studentSchema } from '../schemas';
+import { studentSchema } from '../schema';
 
 export const createStudentDtoSchema = studentSchema.pick({
   studentCode: true,
@@ -11,4 +11,4 @@ export const createStudentDtoSchema = studentSchema.pick({
   departmentId: true,
 });
 
-export type CreateStudentDtoSchema = z.infer<typeof createStudentDtoSchema>;
+export type CreateStudentDto = z.infer<typeof createStudentDtoSchema>;

@@ -1,67 +1,123 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { IStudentService } from './interface';
-import { CreateStudentDtoSchema, UpdateStudentDtoSchema } from './dto';
-import { Student } from './schemas';
-import { StudentRepository } from './student.repository';
+import { Injectable, Logger } from '@nestjs/common';
+import prisma from 'src/components/prisma';
+import { uuidv7 } from 'uuidv7';
+import {
+  createdResponse,
+  deletedResponse,
+  errorResponse,
+  notFoundResponse,
+  Paginated,
+  successPaginatedResponse,
+  successResponse,
+} from 'src/share';
+import { Student, studentSchema } from './schema';
 
 @Injectable()
-export class StudentService implements IStudentService {
-  constructor(private readonly studentRepo: StudentRepository) {}
+export class StudentService {
+  private readonly logger = new Logger(StudentService.name);
 
-  /** Lấy thông tin một sinh viên theo ID */
-  async get(id: string): Promise<Student | null> {
+  /** Lấy thông tin sinh viên theo ID */
+  async get(id: string) {
     try {
-      const student = await this.studentRepo.get(id);
-      if (!student) {
-        throw new NotFoundException(`Sinh viên với id ${id} không tồn tại`);
+      const student = await prisma.students.findUnique({ where: { id } });
+      if (!student || student.isDeleted) {
+        return notFoundResponse(`Không tìm thấy sinh viên với id: ${id}`);
       }
-      return student;
+      return successResponse(student);
     } catch (error) {
-      console.error(`Lỗi khi lấy sinh viên với id ${id}:`, error);
-      throw error;
+      this.logger.error('Lỗi khi lấy thông tin sinh viên:', error);
+      return errorResponse('Lỗi khi lấy thông tin sinh viên');
     }
   }
 
-  /** Lấy danh sách tất cả sinh viên */
-  async listStudents(): Promise<Student[]> {
+  /** Lấy danh sách sinh viên theo phân trang */
+  async listStudents(page: number, limit: number) {
     try {
-      return await this.studentRepo.listStudents();
+      const skip = (page - 1) * limit;
+      const [data, total] = await prisma.$transaction([
+        prisma.students.findMany({
+          where: { isDeleted: false },
+          skip,
+          take: limit,
+        }),
+        prisma.students.count({
+          where: { isDeleted: false },
+        }),
+      ]);
+      const paginated: Paginated<(typeof data)[number]> = {
+        data,
+        paging: { page, limit },
+        total,
+      };
+      return successPaginatedResponse(paginated, '1');
     } catch (error) {
-      console.error('Lỗi khi lấy danh sách sinh viên:', error);
-      throw error;
+      this.logger.error('Lỗi khi lấy danh sách sinh viên:', error);
+      return errorResponse('Lỗi khi lấy danh sách sinh viên');
     }
   }
 
-  /** Thêm mới một sinh viên */
-  async insert(createStudentDto: CreateStudentDtoSchema): Promise<void> {
+  /** Tạo mới sinh viên với validate dữ liệu bằng zod */
+  async create(dto: any) {
+    const id = uuidv7();
     try {
-      await this.studentRepo.insert(createStudentDto);
+      // Validate dữ liệu đầu vào, thêm các trường mặc định
+      const parsedData: Student = studentSchema.parse({
+        ...dto,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+      });
+      const createdStudent = await prisma.students.create({
+        data: parsedData,
+      });
+      return createdResponse(createdStudent);
     } catch (error) {
-      console.error('Lỗi khi thêm mới sinh viên:', error);
-      throw error;
+      this.logger.error('Lỗi khi tạo sinh viên:', error);
+      return errorResponse('Lỗi khi tạo sinh viên');
     }
   }
 
   /** Cập nhật thông tin sinh viên */
-  async update(
-    id: string,
-    updateStudentDto: Partial<UpdateStudentDtoSchema>,
-  ): Promise<void> {
+  async update(id: string, dto: any) {
     try {
-      await this.studentRepo.update(id, updateStudentDto);
+      const existing = await prisma.students.findUnique({ where: { id } });
+      if (!existing || existing.isDeleted) {
+        return notFoundResponse(`Không tìm thấy sinh viên với id: ${id}`);
+      }
+      // Gộp dữ liệu mới với dữ liệu hiện có và cập nhật thời gian
+      const updatedData = {
+        ...dto,
+        updatedAt: new Date(),
+      };
+      // Sử dụng schema.partial() để validate các trường được cập nhật
+      const parsedData = studentSchema.partial().parse(updatedData);
+      const updatedStudent = await prisma.students.update({
+        where: { id },
+        data: parsedData,
+      });
+      return successResponse(updatedStudent, 'Cập nhật thành công');
     } catch (error) {
-      console.error(`Lỗi khi cập nhật sinh viên với id ${id}:`, error);
-      throw error;
+      this.logger.error(`Lỗi khi cập nhật sinh viên với id ${id}:`, error);
+      return errorResponse('Lỗi khi cập nhật sinh viên');
     }
   }
 
-  /** Xóa một sinh viên */
-  async delete(id: string): Promise<void> {
+  /** Xóa mềm sinh viên */
+  async delete(id: string) {
     try {
-      await this.studentRepo.delete(id);
+      const existing = await prisma.students.findUnique({ where: { id } });
+      if (!existing || existing.isDeleted) {
+        return notFoundResponse(`Không tìm thấy sinh viên với id: ${id}`);
+      }
+      await prisma.students.update({
+        where: { id },
+        data: { isDeleted: true, updatedAt: new Date() },
+      });
+      return deletedResponse();
     } catch (error) {
-      console.error(`Lỗi khi xóa sinh viên với id ${id}:`, error);
-      throw error;
+      this.logger.error('Lỗi khi xóa sinh viên:', error);
+      return errorResponse('Lỗi khi xóa sinh viên');
     }
   }
 }

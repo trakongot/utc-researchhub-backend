@@ -1,81 +1,85 @@
 import {
   Body,
   Controller,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Patch,
   Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ReqWithRequester } from 'src/share';
+import { ZodValidationPipe } from 'src/share/zod-validation.pipe';
+import {
+  CreateStudentDto,
+  createStudentDtoSchema,
+} from './dto/create-student.dto';
+import {
+  UpdateStudentDto,
+  updateStudentDtoSchema,
+} from './dto/update-student.dto';
 import { StudentService } from './student.service';
-import { Student } from './schemas';
-import { CreateStudentDtoSchema, UpdateStudentDtoSchema } from './dto';
 
-@Controller('/user/students')
+@ApiTags('Students')
+@Controller('/students')
+@ApiBearerAuth()
 export class StudentController {
-  constructor(private readonly studentService: StudentService) {}
+  constructor(private readonly service: StudentService) {}
 
-  // [GET] /user/students
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Body(new ZodValidationPipe(createStudentDtoSchema)) dto: CreateStudentDto,
+    @Request() req: ReqWithRequester,
+  ) {
+    // Bạn có thể lấy thông tin requester từ req nếu cần thiết (vd: req.user.id)
+    return await this.service.create(dto);
+  }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  async get(@Param('id') id: string) {
+    const result = await this.service.get(id);
+    if (!result) throw new Error(`Không tìm thấy sinh viên với id: ${id}`);
+    return result;
+  }
+
   @Get()
-  async listStudents(): Promise<Student[]> {
-    try {
-      return await this.studentService.listStudents();
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách sinh viên:', error);
-      throw error;
-    }
+  @HttpCode(HttpStatus.OK)
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Trang hiện tại',
+    example: '1',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Số lượng bản ghi trên mỗi trang',
+    example: '10',
+  })
+  async list(@Query('page') page: string, @Query('limit') limit: string) {
+    return this.service.listStudents(Number(page) || 1, Number(limit) || 10);
   }
 
-  // [GET] /user/students/:id
-  @Get('/:id')
-  async getStudent(@Param('id') id: string): Promise<Student> {
-    try {
-      const student = await this.studentService.get(id);
-      if (!student) {
-        throw new NotFoundException(`Sinh viên với id ${id} không tồn tại`);
-      }
-      return student;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // [POST] /user/students/add
-  @Post('/add')
-  async createStudent(
-    @Body() createStudentDto: CreateStudentDtoSchema,
-  ): Promise<void> {
-    try {
-      await this.studentService.insert(createStudentDto);
-    } catch (error) {
-      console.error('Lỗi khi thêm mới sinh viên:', error);
-      throw error;
-    }
-  }
-
-  // [PATCH] /user/students/edit/:id
-  @Patch('/edit/:id')
-  async updateStudent(
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async update(
     @Param('id') id: string,
-    @Body() updateStudentDto: Partial<UpdateStudentDtoSchema>,
-  ): Promise<void> {
-    try {
-      await this.studentService.update(id, updateStudentDto);
-    } catch (error) {
-      console.error(`Lỗi khi cập nhật sinh viên với id ${id}:`, error);
-      throw error;
-    }
+    @Body(new ZodValidationPipe(updateStudentDtoSchema)) dto: UpdateStudentDto,
+    @Request() req: ReqWithRequester,
+  ) {
+    return this.service.update(id, dto);
   }
 
-  // [DELETE] /user/students/delete/:id
-  @Delete('/delete/:id')
-  async deleteStudent(@Param('id') id: string): Promise<void> {
-    try {
-      await this.studentService.delete(id);
-    } catch (error) {
-      console.error(`Lỗi khi xóa sinh viên với id ${id}:`, error);
-      throw error;
-    }
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiResponse({ status: 204, description: 'Xóa sinh viên thành công' })
+  async delete(@Param('id') id: string) {
+    await this.service.delete(id);
   }
 }

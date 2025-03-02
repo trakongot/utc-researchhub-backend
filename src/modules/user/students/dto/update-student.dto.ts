@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { studentSchema } from '../schemas';
+import { studentSchema } from '../schema';
 
 export const updateStudentDtoSchema = studentSchema
   .pick({
@@ -12,4 +12,4 @@ export const updateStudentDtoSchema = studentSchema
   })
   .partial();
 
-export type UpdateStudentDtoSchema = z.infer<typeof updateStudentDtoSchema>;
+export type UpdateStudentDto = z.infer<typeof updateStudentDtoSchema>;
