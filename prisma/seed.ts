@@ -1,469 +1,385 @@
-// import prisma from 'src/components/prisma';
+import { faker } from '@faker-js/faker';
+import { PrismaClient } from '@prisma/client';
+import { uuidv7 } from 'uuidv7';
 
-// async function main() {
-//   // Xóa dữ liệu cũ trong tất cả các bảng
-//   await prisma.graduationProjectAllocations.deleteMany({});
-//   await prisma.studentAdvisingPreferences.deleteMany({});
-//   await prisma.lecturerPreferences.deleteMany({});
-//   await prisma.students.deleteMany({});
-//   await prisma.facultyMembers.deleteMany({});
-//   await prisma.field.deleteMany({});
+const prisma = new PrismaClient();
 
-//   // Fields data with id
-//   const fieldsData = [
-//     { id: 'F1', name: 'Artificial Intelligence' },
-//     { id: 'F2', name: 'Computer Science' },
-//     { id: 'F3', name: 'Data Science' },
-//     { id: 'F4', name: 'Software Engineering' },
-//     { id: 'F5', name: 'Networking' },
-//     { id: 'F6', name: 'Cybersecurity' },
-//     { id: 'F7', name: 'Database Systems' },
-//     { id: 'F8', name: 'Computer Graphics' },
-//     { id: 'F9', name: 'Operating Systems' },
-//     { id: 'F10', name: 'Human-Computer Interaction' },
-//   ];
+// Seed Students
+async function seedStudents(count: number) {
+  for (let i = 0; i < count; i++) {
+    await prisma.student.create({
+      data: {
+        id: uuidv7(),
+        studentCode: faker.string.alphanumeric(8).toUpperCase(),
+        fullName: faker.person.fullName().substring(0, 255),
+        email: faker.internet.email().substring(0, 255),
+        password: faker.internet.password().substring(0, 50),
+        status: faker.helpers.arrayElement([
+          'ACTIVE',
+          'INACTIVE',
+          'GRADUATED',
+          'DROPPED_OUT',
+          'ON_LEAVE',
+        ]),
+        profilePicture: faker.image.avatar().substring(0, 255),
+        lastLogin: faker.date.recent(),
+        isOnline: faker.datatype.boolean(),
+      },
+    });
+  }
+}
 
-//   // Insert fields and store results
-//   const fields = await Promise.all(
-//     fieldsData.map((data) => prisma.field.create({ data })),
-//   );
+// Seed Faculty
+async function seedFaculties(count: number) {
+  for (let i = 0; i < count; i++) {
+    await prisma.faculty.create({
+      data: {
+        id: uuidv7(),
+        facultyCode: faker.string.alphanumeric(8).toUpperCase(),
+        fullName: faker.person.fullName().substring(0, 255),
+        email: faker.internet.email().substring(0, 255),
+        password: faker.internet.password().substring(0, 50),
+        phoneNumber: faker.phone.number().substring(0, 9),
+        rank: faker.helpers.arrayElement([
+          'GS', // Giáo sư (Professor)
+          'PGS', // Phó Giáo sư (Associate Professor)
+          'TS', // Tiến sĩ (Doctor)
+          'ThS', // Thạc sĩ (Master)
+          'GVCC', // Giảng viên cao cấp (Senior Lecturer)
+          'GVC', // Giảng viên chính (Lecturer)
+          'GV', // Giảng viên (Instructor)
+          'TG', // Trợ giảng (Teaching Assistant)
+        ]),
+        status: faker.helpers.arrayElement([
+          'ACTIVE',
+          'INACTIVE',
+          'RETIRED',
+          'RESIGNED',
+          'ON_LEAVE',
+        ]),
+        profilePicture: faker.image.avatar().substring(0, 255),
+        lastLogin: faker.date.recent(),
+        isOnline: faker.datatype.boolean(),
+      },
+    });
+  }
+}
 
-//   // SubFields data with id
-//   const subFieldsData = [
-//     { id: 'SF1', name: 'Machine Learning', parentId: fields[0].id },
-//     { id: 'SF2', name: 'Natural Language Processing', parentId: fields[0].id },
-//     { id: 'SF3', name: 'Algorithms', parentId: fields[1].id },
-//     { id: 'SF4', name: 'Statistics', parentId: fields[2].id },
-//     { id: 'SF5', name: 'Development', parentId: fields[3].id },
-//     { id: 'SF6', name: 'Protocols', parentId: fields[4].id },
-//     { id: 'SF7', name: 'Encryption', parentId: fields[5].id },
-//     { id: 'SF8', name: 'Query Optimization', parentId: fields[6].id },
-//     { id: 'SF9', name: 'Rendering', parentId: fields[7].id },
-//     { id: 'SF10', name: 'UI Design', parentId: fields[9].id },
-//   ];
+// Seed Departments
+async function seedDepartments(count: number) {
+  for (let i = 0; i < count; i++) {
+    await prisma.department.create({
+      data: {
+        id: uuidv7(),
+        departmentCode: faker.string.alphanumeric(5).toUpperCase(),
+        name: faker.company.name().substring(0, 255),
+        description: faker.lorem.sentence(),
+        status: faker.helpers.arrayElement(['ACTIVE', 'INACTIVE']),
+      },
+    });
+  }
+}
 
-//   // Insert subfields and store results
-//   const subFields = await Promise.all(
-//     subFieldsData.map((data) => prisma.field.create({ data })),
-//   );
+// Seed Tags
+async function seedTags() {
+  const tags = [
+    'AI',
+    'Machine Learning',
+    'Blockchain',
+    'Web Development',
+    'Mobile App',
+    'Y tế',
+    'Logistics',
+    'Kinh tế',
+    'Xây dựng',
+    'Hàng hải',
+  ];
 
-//   // Lecturers data with id
-//   const lecturersData = [
-//     {
-//       id: 'L1',
-//       fullName: 'Dr. John Doe',
-//       email: 'john.doe@example.com',
-//       password: 'pass123',
-//       facultyCode: 'F001',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L2',
-//       fullName: 'Prof. Mary Smith',
-//       email: 'mary.smith@example.com',
-//       password: 'pass456',
-//       facultyCode: 'F002',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L3',
-//       fullName: 'Dr. Peter Brown',
-//       email: 'peter.b@example.com',
-//       password: 'pass789',
-//       facultyCode: 'F003',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L4',
-//       fullName: 'Prof. Alice Chen',
-//       email: 'alice.c@example.com',
-//       password: 'pass101',
-//       facultyCode: 'F004',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L5',
-//       fullName: 'Dr. Robert Wilson',
-//       email: 'robert.w@example.com',
-//       password: 'pass112',
-//       facultyCode: 'F005',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L6',
-//       fullName: 'Prof. Linda Davis',
-//       email: 'linda.d@example.com',
-//       password: 'pass131',
-//       facultyCode: 'F006',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L7',
-//       fullName: 'Dr. James Taylor',
-//       email: 'james.t@example.com',
-//       password: 'pass415',
-//       facultyCode: 'F007',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L8',
-//       fullName: 'Prof. Sarah Lee',
-//       email: 'sarah.l@example.com',
-//       password: 'pass161',
-//       facultyCode: 'F008',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L9',
-//       fullName: 'Dr. Michael Kim',
-//       email: 'michael.k@example.com',
-//       password: 'pass718',
-//       facultyCode: 'F009',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L10',
-//       fullName: 'Prof. Emma White',
-//       email: 'emma.w@example.com',
-//       password: 'pass192',
-//       facultyCode: 'F010',
-//       status: 'ACTIVE',
-//     },
-//   ];
+  for (const tagName of tags) {
+    await prisma.tag.create({
+      data: {
+        id: uuidv7(),
+        name: tagName,
+        description: faker.book.title(),
+      },
+    });
+  }
+}
 
-//   // Insert lecturers and store results
-//   const lecturers = await Promise.all(
-//     lecturersData.map((data) => prisma.facultyMembers.create({ data })),
-//   );
+// Seed FieldPools
+async function seedFieldPools() {
+  const fieldPools = [
+    {
+      name: 'Trí tuệ nhân tạo (AI)',
+      description:
+        'Nghiên cứu và phát triển thuật toán AI, học sâu, xử lý ngôn ngữ tự nhiên và thị giác máy tính.',
+    },
+    {
+      name: 'Học máy (Machine Learning)',
+      description:
+        'Ứng dụng và tối ưu hóa thuật toán học máy trong nhiều lĩnh vực như tài chính, y tế, công nghiệp.',
+    },
+    {
+      name: 'Blockchain',
+      description:
+        'Phát triển hệ thống phi tập trung, hợp đồng thông minh, bảo mật và ứng dụng blockchain trong nhiều lĩnh vực.',
+    },
+    {
+      name: 'An toàn và bảo mật thông tin',
+      description:
+        'Nghiên cứu các mô hình bảo mật, mã hóa dữ liệu, phòng chống tấn công mạng và bảo vệ hệ thống thông tin.',
+    },
+    {
+      name: 'Phát triển Web',
+      description:
+        'Nghiên cứu công nghệ frontend, backend, fullstack, tối ưu hiệu suất và bảo mật web.',
+    },
+    {
+      name: 'Phát triển Ứng dụng Di động',
+      description:
+        'Thiết kế và xây dựng ứng dụng trên iOS, Android, phát triển ứng dụng đa nền tảng.',
+    },
+    {
+      name: 'Internet vạn vật (IoT)',
+      description:
+        'Phát triển hệ thống IoT, cảm biến thông minh, ứng dụng IoT trong công nghiệp, nông nghiệp và đời sống.',
+    },
+    {
+      name: 'Điện toán đám mây',
+      description:
+        'Nghiên cứu các mô hình điện toán đám mây, tối ưu hóa lưu trữ, xử lý dữ liệu lớn trên cloud.',
+    },
+    {
+      name: 'Thực tế ảo (VR) và Thực tế tăng cường (AR)',
+      description:
+        'Phát triển công nghệ VR/AR ứng dụng trong giải trí, y tế, giáo dục và thương mại điện tử.',
+    },
+    {
+      name: 'Robot và Tự động hóa',
+      description:
+        'Phát triển robot công nghiệp, robot dịch vụ, tự động hóa dây chuyền sản xuất và hệ thống điều khiển thông minh.',
+    },
+    {
+      name: 'Hệ thống nhúng',
+      description:
+        'Thiết kế vi điều khiển, lập trình firmware, tối ưu hệ thống nhúng cho các thiết bị thông minh.',
+    },
+    {
+      name: 'Giao thông thông minh',
+      description:
+        'Phát triển hệ thống giao thông thông minh, xe tự hành, tối ưu hóa giao thông đô thị.',
+    },
+    {
+      name: 'Hệ thống logistics',
+      description:
+        'Nghiên cứu tối ưu hóa chuỗi cung ứng, quản lý kho vận bằng công nghệ thông minh.',
+    },
+    {
+      name: 'Công nghệ vật liệu mới',
+      description:
+        'Phát triển vật liệu tiên tiến, công nghệ nano, ứng dụng trong y sinh, xây dựng và năng lượng.',
+    },
+    {
+      name: 'Năng lượng tái tạo',
+      description:
+        'Nghiên cứu công nghệ năng lượng mặt trời, gió, hydro, lưu trữ năng lượng và tối ưu hóa hiệu suất.',
+    },
+    {
+      name: 'Công nghệ môi trường',
+      description:
+        'Nghiên cứu xử lý nước thải, khí thải, tái chế chất thải và công nghệ bảo vệ môi trường.',
+    },
+    {
+      name: 'Công nghệ y tế',
+      description:
+        'Ứng dụng AI, IoT, dữ liệu lớn trong y tế, phát triển thiết bị chẩn đoán thông minh và y học chính xác.',
+    },
+    {
+      name: 'Hệ thống thông tin địa lý (GIS)',
+      description:
+        'Ứng dụng GIS trong quản lý đô thị, quy hoạch tài nguyên thiên nhiên và theo dõi biến đổi khí hậu.',
+    },
+    {
+      name: 'Khoa học dữ liệu',
+      description:
+        'Phân tích dữ liệu lớn, khai thác dữ liệu, xây dựng mô hình dự báo cho các lĩnh vực tài chính, marketing, y tế.',
+    },
+    {
+      name: 'Thương mại điện tử',
+      description:
+        'Phát triển nền tảng bán hàng trực tuyến, tối ưu hóa trải nghiệm người dùng, ứng dụng AI trong cá nhân hóa sản phẩm.',
+    },
+    {
+      name: 'Viễn thông và Mạng 5G',
+      description:
+        'Nghiên cứu công nghệ 5G, truyền dữ liệu tốc độ cao, bảo mật mạng viễn thông.',
+    },
+    {
+      name: 'Hàng không và Không gian',
+      description:
+        'Nghiên cứu công nghệ hàng không, vệ tinh, khám phá không gian và truyền thông vũ trụ.',
+    },
+  ];
 
-//   // Students data with id
-//   const studentsData = [
-//     {
-//       id: 'S1',
-//       studentCode: 'S001',
-//       fullName: 'Jane Smith',
-//       email: 'jane.smith@example.com',
-//       password: 'stu123',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S2',
-//       studentCode: 'S002',
-//       fullName: 'Tom Wilson',
-//       email: 'tom.w@example.com',
-//       password: 'stu456',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S3',
-//       studentCode: 'S003',
-//       fullName: 'Lisa Chen',
-//       email: 'lisa.c@example.com',
-//       password: 'stu789',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S4',
-//       studentCode: 'S004',
-//       fullName: 'Mark Taylor',
-//       email: 'mark.t@example.com',
-//       password: 'stu101',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S5',
-//       studentCode: 'S005',
-//       fullName: 'Sophie Brown',
-//       email: 'sophie.b@example.com',
-//       password: 'stu112',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S6',
-//       studentCode: 'S006',
-//       fullName: 'David Lee',
-//       email: 'david.l@example.com',
-//       password: 'stu131',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S7',
-//       studentCode: 'S007',
-//       fullName: 'Emily Davis',
-//       email: 'emily.d@example.com',
-//       password: 'stu415',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S8',
-//       studentCode: 'S008',
-//       fullName: 'Chris Kim',
-//       email: 'chris.k@example.com',
-//       password: 'stu161',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S9',
-//       studentCode: 'S009',
-//       fullName: 'Anna White',
-//       email: 'anna.w@example.com',
-//       password: 'stu718',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S10',
-//       studentCode: 'S010',
-//       fullName: 'Brian Green',
-//       email: 'brian.g@example.com',
-//       password: 'stu192',
-//       status: 'ACTIVE',
-//     },
-//   ];
+  const departments = await prisma.department.findMany();
+  const tags = await prisma.tag.findMany();
 
-//   // Insert students and store results
-//   const students = await Promise.all(
-//     studentsData.map((data) => prisma.students.create({ data })),
-//   );
+  if (departments.length === 0 || tags.length === 0) return;
 
-//   // Lecturer Preferences data with id
-//   const lecturerPreferencesData = [
-//     {
-//       id: 'LP1',
-//       position: 1,
-//       topicTitle: 'AI in Healthcare',
-//       description: 'AI applications in medical diagnosis',
-//       lecturerId: lecturers[0].id,
-//       fieldId: subFields[0].id,
-//     },
-//     {
-//       id: 'LP2',
-//       position: 2,
-//       topicTitle: 'NLP Applications',
-//       description: 'Text processing techniques',
-//       lecturerId: lecturers[1].id,
-//       fieldId: subFields[1].id,
-//     },
-//     {
-//       id: 'LP3',
-//       position: 1,
-//       topicTitle: 'Algorithm Design',
-//       description: 'Efficient algorithm solutions',
-//       lecturerId: lecturers[2].id,
-//       fieldId: subFields[2].id,
-//     },
-//     {
-//       id: 'LP4',
-//       position: 3,
-//       topicTitle: 'Statistical Modeling',
-//       description: 'Data analysis methods',
-//       lecturerId: lecturers[3].id,
-//       fieldId: subFields[3].id,
-//     },
-//     {
-//       id: 'LP5',
-//       position: 2,
-//       topicTitle: 'Software Design',
-//       description: 'Design patterns',
-//       lecturerId: lecturers[4].id,
-//       fieldId: subFields[4].id,
-//     },
-//     {
-//       id: 'LP6',
-//       position: 1,
-//       topicTitle: 'Network Protocols',
-//       description: 'Network communication',
-//       lecturerId: lecturers[5].id,
-//       fieldId: subFields[5].id,
-//     },
-//     {
-//       id: 'LP7',
-//       position: 2,
-//       topicTitle: 'Cybersecurity Basics',
-//       description: 'Encryption techniques',
-//       lecturerId: lecturers[6].id,
-//       fieldId: subFields[6].id,
-//     },
-//     {
-//       id: 'LP8',
-//       position: 1,
-//       topicTitle: 'Database Optimization',
-//       description: 'Query performance',
-//       lecturerId: lecturers[7].id,
-//       fieldId: subFields[7].id,
-//     },
-//     {
-//       id: 'LP9',
-//       position: 3,
-//       topicTitle: '3D Rendering',
-//       description: 'Graphics rendering',
-//       lecturerId: lecturers[8].id,
-//       fieldId: subFields[8].id,
-//     },
-//     {
-//       id: 'LP10',
-//       position: 2,
-//       topicTitle: 'UI/UX Design',
-//       description: 'User interface design',
-//       lecturerId: lecturers[9].id,
-//       fieldId: subFields[9].id,
-//     },
-//   ];
+  for (const field of fieldPools) {
+    const fieldPool = await prisma.fieldPool.create({
+      data: {
+        id: uuidv7(),
+        name: field.name,
+        description: field.description,
+      },
+    });
 
-//   // Insert lecturer preferences
-//   await Promise.all(
-//     lecturerPreferencesData.map((data) =>
-//       prisma.lecturerPreferences.create({ data }),
-//     ),
-//   );
+    // Liên kết FieldPool với Department
+    const randomDepartments = faker.helpers.arrayElements(departments, {
+      min: 1,
+      max: 3,
+    });
+    for (const dept of randomDepartments) {
+      await prisma.fieldPoolDepartment.create({
+        data: {
+          fieldPoolId: fieldPool.id,
+          departmentId: dept.id,
+        },
+      });
+    }
 
-//   // Student Advising Preferences data with id
-//   const studentAdvisingPreferencesData = [
-//     {
-//       id: 'SAP1',
-//       studentId: students[0].id,
-//       facultyMemberId: lecturers[0].id,
-//       fieldId: fields[0].id,
-//     },
-//     {
-//       id: 'SAP2',
-//       studentId: students[1].id,
-//       facultyMemberId: lecturers[1].id,
-//       fieldId: fields[0].id,
-//     },
-//     {
-//       id: 'SAP3',
-//       studentId: students[2].id,
-//       facultyMemberId: lecturers[2].id,
-//       fieldId: fields[1].id,
-//     },
-//     {
-//       id: 'SAP4',
-//       studentId: students[3].id,
-//       facultyMemberId: lecturers[3].id,
-//       fieldId: fields[2].id,
-//     },
-//     {
-//       id: 'SAP5',
-//       studentId: students[4].id,
-//       facultyMemberId: lecturers[4].id,
-//       fieldId: fields[3].id,
-//     },
-//     {
-//       id: 'SAP6',
-//       studentId: students[5].id,
-//       facultyMemberId: lecturers[5].id,
-//       fieldId: fields[4].id,
-//     },
-//     {
-//       id: 'SAP7',
-//       studentId: students[6].id,
-//       facultyMemberId: lecturers[6].id,
-//       fieldId: fields[5].id,
-//     },
-//     {
-//       id: 'SAP8',
-//       studentId: students[7].id,
-//       facultyMemberId: lecturers[7].id,
-//       fieldId: fields[6].id,
-//     },
-//     {
-//       id: 'SAP9',
-//       studentId: students[8].id,
-//       facultyMemberId: lecturers[8].id,
-//       fieldId: fields[7].id,
-//     },
-//     {
-//       id: 'SAP10',
-//       studentId: students[9].id,
-//       facultyMemberId: lecturers[9].id,
-//       fieldId: fields[9].id,
-//     },
-//   ];
+    // Liên kết FieldPool với Tag
+    const randomTags = faker.helpers.arrayElements(tags, { min: 1, max: 3 });
+    for (const tag of randomTags) {
+      await prisma.fieldPoolTag.create({
+        data: {
+          fieldPoolId: fieldPool.id,
+          tagId: tag.id,
+        },
+      });
+    }
+  }
+}
+// Seed LecturerSelections
+async function seedLecturerSelections(count: number) {
+  const faculties = await prisma.faculty.findMany();
+  const fieldPools = await prisma.fieldPool.findMany();
+  const tags = await prisma.tag.findMany();
 
-//   // Insert student advising preferences
-//   await Promise.all(
-//     studentAdvisingPreferencesData.map((data) =>
-//       prisma.studentAdvisingPreferences.create({ data }),
-//     ),
-//   );
+  if (faculties.length === 0 || fieldPools.length === 0 || tags.length === 0)
+    return;
 
-//   // Graduation Project Allocations data with id
-//   const graduationProjectAllocationsData = [
-//     {
-//       id: 'GPA1',
-//       topicTitle: 'AI-Powered Diagnosis System',
-//       studentId: students[0].id,
-//       lecturerId: lecturers[0].id,
-//     },
-//     {
-//       id: 'GPA2',
-//       topicTitle: 'Sentiment Analysis Tool',
-//       studentId: students[1].id,
-//       lecturerId: lecturers[1].id,
-//     },
-//     {
-//       id: 'GPA3',
-//       topicTitle: 'Sorting Algorithm Visualizer',
-//       studentId: students[2].id,
-//       lecturerId: lecturers[2].id,
-//     },
-//     {
-//       id: 'GPA4',
-//       topicTitle: 'Predictive Analytics Dashboard',
-//       studentId: students[3].id,
-//       lecturerId: lecturers[3].id,
-//     },
-//     {
-//       id: 'GPA5',
-//       topicTitle: 'Task Management App',
-//       studentId: students[4].id,
-//       lecturerId: lecturers[4].id,
-//     },
-//     {
-//       id: 'GPA6',
-//       topicTitle: 'Network Monitoring System',
-//       studentId: students[5].id,
-//       lecturerId: lecturers[5].id,
-//     },
-//     {
-//       id: 'GPA7',
-//       topicTitle: 'Secure File Storage',
-//       studentId: students[6].id,
-//       lecturerId: lecturers[6].id,
-//     },
-//     {
-//       id: 'GPA8',
-//       topicTitle: 'Database Management Tool',
-//       studentId: students[7].id,
-//       lecturerId: lecturers[7].id,
-//     },
-//     {
-//       id: 'GPA9',
-//       topicTitle: '3D Game Engine',
-//       studentId: students[8].id,
-//       lecturerId: lecturers[8].id,
-//     },
-//     {
-//       id: 'GPA10',
-//       topicTitle: 'Interactive UI Prototype',
-//       studentId: students[9].id,
-//       lecturerId: lecturers[9].id,
-//     },
-//   ];
+  for (let i = 0; i < count; i++) {
+    const lecturerSelection = await prisma.lecturerSelection.create({
+      data: {
+        id: uuidv7(),
+        priority: faker.number.int({ min: 1, max: 5 }),
+        topicTitle: faker.lorem.words(5).substring(0, 255),
+        description: faker.lorem.sentence(),
+        capacity: faker.number.int({ min: 1, max: 5 }),
+        isActive: faker.datatype.boolean(),
+        lecturerId: faker.helpers.arrayElement(faculties).id,
+        fieldPoolId: faker.helpers.arrayElement(fieldPools).id,
+      },
+    });
 
-//   // Insert graduation project allocations
-//   await Promise.all(
-//     graduationProjectAllocationsData.map((data) =>
-//       prisma.graduationProjectAllocations.create({ data }),
-//     ),
-//   );
-// }
+    // Liên kết LecturerSelection với Tag (LecturerSelectionTag)
+    const randomTags = faker.helpers.arrayElements(tags, { min: 1, max: 3 });
+    for (const tag of randomTags) {
+      await prisma.lecturerSelectionTag.create({
+        data: {
+          lecturerSelectionId: lecturerSelection.id,
+          tagId: tag.id,
+        },
+      });
+    }
+  }
+}
 
-// main()
-//   .catch((e) => {
-//     console.error(e);
-//     process.exit(1);
-//   })
-//   .finally(async () => {
-//     await prisma.$disconnect();
-//   });
+// Seed StudentSelections
+async function seedStudentSelections(count: number) {
+  const students = await prisma.student.findMany();
+  const faculties = await prisma.faculty.findMany();
+  const fieldPools = await prisma.fieldPool.findMany();
+  const tags = await prisma.tag.findMany();
+
+  if (
+    students.length === 0 ||
+    faculties.length === 0 ||
+    fieldPools.length === 0 ||
+    tags.length === 0
+  )
+    return;
+
+  for (let i = 0; i < count; i++) {
+    const studentSelection = await prisma.studentSelection.create({
+      data: {
+        id: uuidv7(),
+        priority: faker.number.int({ min: 1, max: 3 }),
+        preferredAt: faker.date.recent(),
+        status: faker.helpers.arrayElement(['PENDING', 'APPROVED', 'REJECTED']),
+        studentId: faker.helpers.arrayElement(students).id,
+        facultyMemberId: faker.helpers.arrayElement(faculties).id,
+        fieldPoolId: faker.helpers.arrayElement(fieldPools).id,
+      },
+    });
+
+    // Liên kết StudentSelection với Tag (StudentSelectionTag)
+    const randomTags = faker.helpers.arrayElements(tags, { min: 1, max: 3 });
+    for (const tag of randomTags) {
+      await prisma.studentSelectionTag.create({
+        data: {
+          studentSelectionId: studentSelection.id,
+          tagId: tag.id,
+        },
+      });
+    }
+  }
+}
+
+// Seed ProjectAllocations
+async function seedProjectAllocations(count: number) {
+  const students = await prisma.student.findMany();
+  const faculties = await prisma.faculty.findMany();
+
+  if (students.length === 0 || faculties.length === 0) return;
+
+  for (let i = 0; i < count; i++) {
+    await prisma.projectAllocation.create({
+      data: {
+        id: uuidv7(),
+        topicTitle: faker.lorem.words(5).substring(0, 255),
+        allocatedAt: faker.date.past(),
+        studentId: faker.helpers.arrayElement(students).id,
+        lecturerId: faker.helpers.arrayElement(faculties).id,
+        createdById: faker.helpers.arrayElement(faculties).id,
+      },
+    });
+  }
+}
+
+// Main function
+async function main() {
+  console.log('Seeding database...');
+
+  await seedStudents(400);
+  await seedFaculties(30);
+  await seedDepartments(5);
+  await seedTags();
+  await seedFieldPools();
+  await seedLecturerSelections(20);
+  await seedStudentSelections(20);
+  await seedProjectAllocations(15);
+
+  console.log('Seeding completed!');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
