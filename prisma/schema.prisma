@@ -141,6 +141,7 @@ model Faculty {
   LecturerRelation         ProjectAllocation[]      @relation("ProjectAllocationSelectedByLecturer")
   StudentSelection         StudentSelection[]       @relation("LecturerSelectedByStudent")
   ApprovedStudentSelection StudentSelection[]       @relation("ApprovedStudentSelection")
+  ProjectCriteriaScore     ProjectCriteriaScore[]
 
   @@index([facultyCode, email, status])
   @@map("faculty")
@@ -679,27 +680,28 @@ model ProjectCriteriaScore {
   id            String  @id
   projectEvalId String  @map("project_eval_id")
   criteriaId    String  @map("criteria_id")
-  evaluatorId   String? @map("evaluator_id")
+  evaluatorId   String  @map("evaluator_id")
   score         Float   @default(0.0) @map("score")
   comment       String? @map("comment")
 
   EvaluationCriteria EvaluationCriteria @relation(fields: [criteriaId], references: [id])
   ProjectEvaluation  ProjectEvaluation  @relation(fields: [projectEvalId], references: [id])
+  Evaluator          Faculty            @relation(fields: [evaluatorId], references: [id])
 
   @@map("project_criteria_score")
 }
 
 model ProjectEvaluationScore {
-  id                String                 @id
-  role              DefenseCommitteeRoleT? @map("role")
-  score             Float                  @map("score")
-  comment           String?                @map("comment")
-  createdAt         DateTime               @default(now()) @map("created_at")
-  updatedAt         DateTime               @updatedAt @map("updated_at")
-  evaluationId      String                 @map("evaluation_id")
-  committeeMemberId String                 @map("committee_member_id")
+  id                  String                 @id
+  role                DefenseCommitteeRoleT? @map("role")
+  score               Float                  @map("score")
+  comment             String?                @map("comment")
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
+  ProjectEvaluationId String                 @map("project_evaluation_id")
+  committeeMemberId   String                 @map("committee_member_id")
 
-  Evaluation      ProjectEvaluation @relation(fields: [evaluationId], references: [id])
+  Evaluation      ProjectEvaluation @relation(fields: [ProjectEvaluationId], references: [id])
   CommitteeMember Faculty           @relation(fields: [committeeMemberId], references: [id])
 
   @@unique([committeeMemberId])
