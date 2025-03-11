@@ -386,7 +386,7 @@ model ProposedProjectComment {
   content     String   @map("content")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  proposedProjectId String          @map("study_topic_darf_id")
+  proposedProjectId String          @map("project_darf_id")
   Propose           ProposedProject @relation(fields: [proposedProjectId], references: [id])
 
   @@map("proposed_project_comment")
@@ -677,7 +677,7 @@ model ProjectEvaluation {
 
 model ProjectCriteriaScore {
   id            String  @id
-  projectEvalId String  @map("study_topic_eval_id")
+  projectEvalId String  @map("project_eval_id")
   criteriaId    String  @map("criteria_id")
   evaluatorId   String? @map("evaluator_id")
   score         Float   @default(0.0) @map("score")
