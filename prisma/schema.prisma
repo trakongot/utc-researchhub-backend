@@ -663,8 +663,8 @@ model ProjectEvaluation {
   evaluatedById         String?                  @map("evaluated_by_id")
   teacherScore          Float?                   @map("teacher_score")
   committeeAverageScore Float?                   @map("committee_average_score")
-  teacherWeight         Float?                   @default(0.3) @map("teacher_weight") // Trọng số giáo viên (30%)
-  committeeWeight       Float?                   @default(0.7) @map("committee_weight") // Trọng số hội đồng (70%)
+  teacherWeight         Float?                   @default(0.5) @map("teacher_weight") 
+  committeeWeight       Float?                   @default(0.5) @map("committee_weight") 
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
 
