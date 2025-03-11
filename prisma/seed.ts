@@ -1,469 +1,282 @@
-// import prisma from 'src/components/prisma';
+import { faker } from '@faker-js/faker';
+import {
+  LecturerSelectionStatusT,
+  PrismaClient,
+  StudentSelectionStatusT,
+  UserT,
+} from '@prisma/client';
+import { uuidv7 } from 'uuidv7';
 
-// async function main() {
-//   // Xóa dữ liệu cũ trong tất cả các bảng
-//   await prisma.graduationProjectAllocations.deleteMany({});
-//   await prisma.studentAdvisingPreferences.deleteMany({});
-//   await prisma.lecturerPreferences.deleteMany({});
-//   await prisma.students.deleteMany({});
-//   await prisma.facultyMembers.deleteMany({});
-//   await prisma.field.deleteMany({});
+const prisma = new PrismaClient();
 
-//   // Fields data with id
-//   const fieldsData = [
-//     { id: 'F1', name: 'Artificial Intelligence' },
-//     { id: 'F2', name: 'Computer Science' },
-//     { id: 'F3', name: 'Data Science' },
-//     { id: 'F4', name: 'Software Engineering' },
-//     { id: 'F5', name: 'Networking' },
-//     { id: 'F6', name: 'Cybersecurity' },
-//     { id: 'F7', name: 'Database Systems' },
-//     { id: 'F8', name: 'Computer Graphics' },
-//     { id: 'F9', name: 'Operating Systems' },
-//     { id: 'F10', name: 'Human-Computer Interaction' },
-//   ];
+async function seedStudents(count: number) {
+  const emailSet = new Set<string>();
 
-//   // Insert fields and store results
-//   const fields = await Promise.all(
-//     fieldsData.map((data) => prisma.field.create({ data })),
-//   );
+  const students = Array.from({ length: count }).map(() => {
+    let email: string;
+    do {
+      email = faker.internet.email().toLowerCase();
+    } while (emailSet.has(email));
+    emailSet.add(email);
 
-//   // SubFields data with id
-//   const subFieldsData = [
-//     { id: 'SF1', name: 'Machine Learning', parentId: fields[0].id },
-//     { id: 'SF2', name: 'Natural Language Processing', parentId: fields[0].id },
-//     { id: 'SF3', name: 'Algorithms', parentId: fields[1].id },
-//     { id: 'SF4', name: 'Statistics', parentId: fields[2].id },
-//     { id: 'SF5', name: 'Development', parentId: fields[3].id },
-//     { id: 'SF6', name: 'Protocols', parentId: fields[4].id },
-//     { id: 'SF7', name: 'Encryption', parentId: fields[5].id },
-//     { id: 'SF8', name: 'Query Optimization', parentId: fields[6].id },
-//     { id: 'SF9', name: 'Rendering', parentId: fields[7].id },
-//     { id: 'SF10', name: 'UI Design', parentId: fields[9].id },
-//   ];
+    return {
+      id: uuidv7(),
+      studentCode: faker.string.alphanumeric(8).toUpperCase(),
+      fullName: faker.person.fullName().substring(0, 255),
+      email: email.substring(0, 255),
+      password: faker.internet.password().substring(0, 50),
+      status: faker.helpers.arrayElement([
+        'ACTIVE',
+        'INACTIVE',
+        'GRADUATED',
+        'DROPPED_OUT',
+        'ON_LEAVE',
+      ]),
+      profilePicture: faker.image.avatar().substring(0, 255),
+      lastLogin: faker.date.recent(),
+      isOnline: faker.datatype.boolean(),
+    };
+  });
 
-//   // Insert subfields and store results
-//   const subFields = await Promise.all(
-//     subFieldsData.map((data) => prisma.field.create({ data })),
-//   );
+  await prisma.student.createMany({ data: students });
+  console.log(`✅ Successfully seeded ${count} students!`);
+}
 
-//   // Lecturers data with id
-//   const lecturersData = [
-//     {
-//       id: 'L1',
-//       fullName: 'Dr. John Doe',
-//       email: 'john.doe@example.com',
-//       password: 'pass123',
-//       facultyCode: 'F001',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L2',
-//       fullName: 'Prof. Mary Smith',
-//       email: 'mary.smith@example.com',
-//       password: 'pass456',
-//       facultyCode: 'F002',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L3',
-//       fullName: 'Dr. Peter Brown',
-//       email: 'peter.b@example.com',
-//       password: 'pass789',
-//       facultyCode: 'F003',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L4',
-//       fullName: 'Prof. Alice Chen',
-//       email: 'alice.c@example.com',
-//       password: 'pass101',
-//       facultyCode: 'F004',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L5',
-//       fullName: 'Dr. Robert Wilson',
-//       email: 'robert.w@example.com',
-//       password: 'pass112',
-//       facultyCode: 'F005',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L6',
-//       fullName: 'Prof. Linda Davis',
-//       email: 'linda.d@example.com',
-//       password: 'pass131',
-//       facultyCode: 'F006',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L7',
-//       fullName: 'Dr. James Taylor',
-//       email: 'james.t@example.com',
-//       password: 'pass415',
-//       facultyCode: 'F007',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L8',
-//       fullName: 'Prof. Sarah Lee',
-//       email: 'sarah.l@example.com',
-//       password: 'pass161',
-//       facultyCode: 'F008',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L9',
-//       fullName: 'Dr. Michael Kim',
-//       email: 'michael.k@example.com',
-//       password: 'pass718',
-//       facultyCode: 'F009',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'L10',
-//       fullName: 'Prof. Emma White',
-//       email: 'emma.w@example.com',
-//       password: 'pass192',
-//       facultyCode: 'F010',
-//       status: 'ACTIVE',
-//     },
-//   ];
+async function seedFaculties(count: number) {
+  const faculties = Array.from({ length: count }).map(() => ({
+    id: uuidv7(),
+    facultyCode: faker.string.alphanumeric(8).toUpperCase(),
+    fullName: faker.person.fullName().substring(0, 255),
+    email: faker.internet.email().substring(0, 255),
+    password: faker.internet.password().substring(0, 50),
+    phoneNumber: faker.phone.number().substring(0, 9),
+    rank: faker.helpers.arrayElement([
+      'GS',
+      'PGS',
+      'TS',
+      'ThS',
+      'GVCC',
+      'GVC',
+      'GV',
+      'TG',
+    ]),
+    status: faker.helpers.arrayElement([
+      'ACTIVE',
+      'INACTIVE',
+      'RETIRED',
+      'RESIGNED',
+      'ON_LEAVE',
+    ]),
+    profilePicture: faker.image.avatar().substring(0, 255),
+    lastLogin: faker.date.recent(),
+    isOnline: faker.datatype.boolean(),
+  }));
 
-//   // Insert lecturers and store results
-//   const lecturers = await Promise.all(
-//     lecturersData.map((data) => prisma.facultyMembers.create({ data })),
-//   );
+  await prisma.faculty.createMany({ data: faculties });
+  console.log(`✅ Successfully seeded ${count} faculties!`);
+}
 
-//   // Students data with id
-//   const studentsData = [
-//     {
-//       id: 'S1',
-//       studentCode: 'S001',
-//       fullName: 'Jane Smith',
-//       email: 'jane.smith@example.com',
-//       password: 'stu123',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S2',
-//       studentCode: 'S002',
-//       fullName: 'Tom Wilson',
-//       email: 'tom.w@example.com',
-//       password: 'stu456',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S3',
-//       studentCode: 'S003',
-//       fullName: 'Lisa Chen',
-//       email: 'lisa.c@example.com',
-//       password: 'stu789',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S4',
-//       studentCode: 'S004',
-//       fullName: 'Mark Taylor',
-//       email: 'mark.t@example.com',
-//       password: 'stu101',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S5',
-//       studentCode: 'S005',
-//       fullName: 'Sophie Brown',
-//       email: 'sophie.b@example.com',
-//       password: 'stu112',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S6',
-//       studentCode: 'S006',
-//       fullName: 'David Lee',
-//       email: 'david.l@example.com',
-//       password: 'stu131',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S7',
-//       studentCode: 'S007',
-//       fullName: 'Emily Davis',
-//       email: 'emily.d@example.com',
-//       password: 'stu415',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S8',
-//       studentCode: 'S008',
-//       fullName: 'Chris Kim',
-//       email: 'chris.k@example.com',
-//       password: 'stu161',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S9',
-//       studentCode: 'S009',
-//       fullName: 'Anna White',
-//       email: 'anna.w@example.com',
-//       password: 'stu718',
-//       status: 'ACTIVE',
-//     },
-//     {
-//       id: 'S10',
-//       studentCode: 'S010',
-//       fullName: 'Brian Green',
-//       email: 'brian.g@example.com',
-//       password: 'stu192',
-//       status: 'ACTIVE',
-//     },
-//   ];
+async function seedDepartments(count: number) {
+  const departments = Array.from({ length: count }).map(() => ({
+    id: uuidv7(),
+    departmentCode: faker.string.alphanumeric(5).toUpperCase(),
+    name: faker.company.name().substring(0, 255),
+    description: faker.lorem.sentence(),
+    status: faker.helpers.arrayElement(['ACTIVE', 'INACTIVE']),
+  }));
 
-//   // Insert students and store results
-//   const students = await Promise.all(
-//     studentsData.map((data) => prisma.students.create({ data })),
-//   );
+  await prisma.department.createMany({ data: departments });
+  console.log(`✅ Successfully seeded ${count} departments!`);
+}
 
-//   // Lecturer Preferences data with id
-//   const lecturerPreferencesData = [
-//     {
-//       id: 'LP1',
-//       position: 1,
-//       topicTitle: 'AI in Healthcare',
-//       description: 'AI applications in medical diagnosis',
-//       lecturerId: lecturers[0].id,
-//       fieldId: subFields[0].id,
-//     },
-//     {
-//       id: 'LP2',
-//       position: 2,
-//       topicTitle: 'NLP Applications',
-//       description: 'Text processing techniques',
-//       lecturerId: lecturers[1].id,
-//       fieldId: subFields[1].id,
-//     },
-//     {
-//       id: 'LP3',
-//       position: 1,
-//       topicTitle: 'Algorithm Design',
-//       description: 'Efficient algorithm solutions',
-//       lecturerId: lecturers[2].id,
-//       fieldId: subFields[2].id,
-//     },
-//     {
-//       id: 'LP4',
-//       position: 3,
-//       topicTitle: 'Statistical Modeling',
-//       description: 'Data analysis methods',
-//       lecturerId: lecturers[3].id,
-//       fieldId: subFields[3].id,
-//     },
-//     {
-//       id: 'LP5',
-//       position: 2,
-//       topicTitle: 'Software Design',
-//       description: 'Design patterns',
-//       lecturerId: lecturers[4].id,
-//       fieldId: subFields[4].id,
-//     },
-//     {
-//       id: 'LP6',
-//       position: 1,
-//       topicTitle: 'Network Protocols',
-//       description: 'Network communication',
-//       lecturerId: lecturers[5].id,
-//       fieldId: subFields[5].id,
-//     },
-//     {
-//       id: 'LP7',
-//       position: 2,
-//       topicTitle: 'Cybersecurity Basics',
-//       description: 'Encryption techniques',
-//       lecturerId: lecturers[6].id,
-//       fieldId: subFields[6].id,
-//     },
-//     {
-//       id: 'LP8',
-//       position: 1,
-//       topicTitle: 'Database Optimization',
-//       description: 'Query performance',
-//       lecturerId: lecturers[7].id,
-//       fieldId: subFields[7].id,
-//     },
-//     {
-//       id: 'LP9',
-//       position: 3,
-//       topicTitle: '3D Rendering',
-//       description: 'Graphics rendering',
-//       lecturerId: lecturers[8].id,
-//       fieldId: subFields[8].id,
-//     },
-//     {
-//       id: 'LP10',
-//       position: 2,
-//       topicTitle: 'UI/UX Design',
-//       description: 'User interface design',
-//       lecturerId: lecturers[9].id,
-//       fieldId: subFields[9].id,
-//     },
-//   ];
+async function generateFieldPools() {
+  const fieldPoolNames = [
+    'Cầu đường',
+    'Kỹ thuật Kết cấu',
+    'Địa kỹ thuật',
+    'Giao thông đô thị',
+    'Quy hoạch Giao thông',
+    'Vận tải và Logistics',
+    'Công nghệ thông tin',
+    'Hệ thống thông tin giao thông',
+    'Cơ khí Giao thông',
+    'Điện - Điện tử Giao thông',
+    'Kinh tế Xây dựng',
+    'Kinh tế Vận tải',
+    'Tài chính - Ngân hàng',
+    'Khoa học Môi trường',
+    'Kỹ thuật Môi trường',
+    'Quản lý Dự án',
+    'An toàn Giao thông',
+    'Kỹ thuật Ô tô',
+    'Hệ thống đường sắt',
+    'Hàng không và sân bay',
+    'Hải cảng và Công trình biển',
+    'Công trình thủy',
+    'Kỹ thuật cầu thép',
+    'Vật liệu Xây dựng',
+    'Quản lý đô thị',
+    'Giao thông thông minh',
+    'Ứng dụng AI trong Giao thông',
+    'Blockchain trong Logistics',
+    'Thương mại điện tử và Giao thông',
+    'Hạ tầng giao thông bền vững',
+  ];
 
-//   // Insert lecturer preferences
-//   await Promise.all(
-//     lecturerPreferencesData.map((data) =>
-//       prisma.lecturerPreferences.create({ data }),
-//     ),
-//   );
+  const fieldPools = fieldPoolNames.map((name) => ({
+    id: uuidv7(),
+    name,
+    description: `Chuyên ngành về ${name.toLowerCase()} tại UTC.`,
+    status: faker.helpers.arrayElement(['OPEN', 'CLOSED', 'HIDDEN']),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    registrationDeadline: faker.date.future(),
+  }));
 
-//   // Student Advising Preferences data with id
-//   const studentAdvisingPreferencesData = [
-//     {
-//       id: 'SAP1',
-//       studentId: students[0].id,
-//       facultyMemberId: lecturers[0].id,
-//       fieldId: fields[0].id,
-//     },
-//     {
-//       id: 'SAP2',
-//       studentId: students[1].id,
-//       facultyMemberId: lecturers[1].id,
-//       fieldId: fields[0].id,
-//     },
-//     {
-//       id: 'SAP3',
-//       studentId: students[2].id,
-//       facultyMemberId: lecturers[2].id,
-//       fieldId: fields[1].id,
-//     },
-//     {
-//       id: 'SAP4',
-//       studentId: students[3].id,
-//       facultyMemberId: lecturers[3].id,
-//       fieldId: fields[2].id,
-//     },
-//     {
-//       id: 'SAP5',
-//       studentId: students[4].id,
-//       facultyMemberId: lecturers[4].id,
-//       fieldId: fields[3].id,
-//     },
-//     {
-//       id: 'SAP6',
-//       studentId: students[5].id,
-//       facultyMemberId: lecturers[5].id,
-//       fieldId: fields[4].id,
-//     },
-//     {
-//       id: 'SAP7',
-//       studentId: students[6].id,
-//       facultyMemberId: lecturers[6].id,
-//       fieldId: fields[5].id,
-//     },
-//     {
-//       id: 'SAP8',
-//       studentId: students[7].id,
-//       facultyMemberId: lecturers[7].id,
-//       fieldId: fields[6].id,
-//     },
-//     {
-//       id: 'SAP9',
-//       studentId: students[8].id,
-//       facultyMemberId: lecturers[8].id,
-//       fieldId: fields[7].id,
-//     },
-//     {
-//       id: 'SAP10',
-//       studentId: students[9].id,
-//       facultyMemberId: lecturers[9].id,
-//       fieldId: fields[9].id,
-//     },
-//   ];
+  await prisma.fieldPool.createMany({ data: fieldPools });
+  console.log(`✅ Successfully seeded ${fieldPools.length} field pools!`);
+}
 
-//   // Insert student advising preferences
-//   await Promise.all(
-//     studentAdvisingPreferencesData.map((data) =>
-//       prisma.studentAdvisingPreferences.create({ data }),
-//     ),
-//   );
+async function generateDomains() {
+  const domainNames = [
+    'Artificial Intelligence',
+    'Blockchain',
+    'Circular Economy',
+    'Cybersecurity',
+    'Data Science',
+    'E-Commerce',
+    'Education Technology',
+    'Environmental Science',
+    'Financial Technology (Fintech)',
+    'Health Informatics',
+    'Internet of Things (IoT)',
+    'Machine Learning',
+    'Renewable Energy',
+    'Robotics',
+    'Smart Cities',
+    'Software Engineering',
+    'Sustainable Development',
+    'Supply Chain Management',
+    'UX/UI Design',
+    'Virtual Reality & Augmented Reality',
+  ];
 
-//   // Graduation Project Allocations data with id
-//   const graduationProjectAllocationsData = [
-//     {
-//       id: 'GPA1',
-//       topicTitle: 'AI-Powered Diagnosis System',
-//       studentId: students[0].id,
-//       lecturerId: lecturers[0].id,
-//     },
-//     {
-//       id: 'GPA2',
-//       topicTitle: 'Sentiment Analysis Tool',
-//       studentId: students[1].id,
-//       lecturerId: lecturers[1].id,
-//     },
-//     {
-//       id: 'GPA3',
-//       topicTitle: 'Sorting Algorithm Visualizer',
-//       studentId: students[2].id,
-//       lecturerId: lecturers[2].id,
-//     },
-//     {
-//       id: 'GPA4',
-//       topicTitle: 'Predictive Analytics Dashboard',
-//       studentId: students[3].id,
-//       lecturerId: lecturers[3].id,
-//     },
-//     {
-//       id: 'GPA5',
-//       topicTitle: 'Task Management App',
-//       studentId: students[4].id,
-//       lecturerId: lecturers[4].id,
-//     },
-//     {
-//       id: 'GPA6',
-//       topicTitle: 'Network Monitoring System',
-//       studentId: students[5].id,
-//       lecturerId: lecturers[5].id,
-//     },
-//     {
-//       id: 'GPA7',
-//       topicTitle: 'Secure File Storage',
-//       studentId: students[6].id,
-//       lecturerId: lecturers[6].id,
-//     },
-//     {
-//       id: 'GPA8',
-//       topicTitle: 'Database Management Tool',
-//       studentId: students[7].id,
-//       lecturerId: lecturers[7].id,
-//     },
-//     {
-//       id: 'GPA9',
-//       topicTitle: '3D Game Engine',
-//       studentId: students[8].id,
-//       lecturerId: lecturers[8].id,
-//     },
-//     {
-//       id: 'GPA10',
-//       topicTitle: 'Interactive UI Prototype',
-//       studentId: students[9].id,
-//       lecturerId: lecturers[9].id,
-//     },
-//   ];
+  const domains = domainNames.map((name) => ({
+    id: uuidv7(),
+    name,
+    description: `This domain focuses on ${name.toLowerCase()} and its applications.`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
 
-//   // Insert graduation project allocations
-//   await Promise.all(
-//     graduationProjectAllocationsData.map((data) =>
-//       prisma.graduationProjectAllocations.create({ data }),
-//     ),
-//   );
-// }
+  await prisma.domain.createMany({ data: domains });
+  console.log(`✅ Successfully seeded ${domains.length} domains!`);
+}
 
-// main()
-//   .catch((e) => {
-//     console.error(e);
-//     process.exit(1);
-//   })
-//   .finally(async () => {
-//     await prisma.$disconnect();
-//   });
+async function generateLecturerSelections(count: number) {
+  const lecturers = await prisma.faculty.findMany({ select: { id: true } });
+  const fieldPools = await prisma.fieldPool.findMany({ select: { id: true } });
+
+  if (lecturers.length === 0 || fieldPools.length === 0) {
+    console.warn(
+      '⚠️ Không có dữ liệu Faculty hoặc FieldPool, bỏ qua tạo LecturerSelection.',
+    );
+    return;
+  }
+
+  const selections = Array.from({ length: count }).map(() => ({
+    id: uuidv7(),
+    priority: faker.number.int({ min: 1, max: 3 }),
+    topicTitle: faker.lorem.words(5),
+    description: faker.lorem.paragraph(),
+    capacity: faker.number.int({ min: 1, max: 5 }),
+    currentCapacity: faker.number.int({ min: 0, max: 5 }),
+    status: faker.helpers.arrayElement(Object.values(LecturerSelectionStatusT)),
+    isActive: true,
+    lecturerId: faker.helpers.arrayElement(lecturers).id,
+    fieldPoolId: faker.helpers.arrayElement(fieldPools).id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
+
+  await prisma.lecturerSelection.createMany({ data: selections });
+  console.log(`✅ Successfully seeded ${count} LecturerSelections!`);
+}
+
+async function generateStudentSelections(count: number) {
+  const students = await prisma.student.findMany({ select: { id: true } });
+  const lecturers = await prisma.faculty.findMany({ select: { id: true } });
+  const fieldPools = await prisma.fieldPool.findMany({ select: { id: true } });
+
+  if (!students.length || !lecturers.length || !fieldPools.length) {
+    console.log('⚠️ Không đủ dữ liệu để tạo Student Selection.');
+    return;
+  }
+
+  const selections = Array.from({ length: count }).map(() => ({
+    id: uuidv7(),
+    priority: faker.number.int({ min: 1, max: 3 }),
+    topicTitle: faker.lorem.words(5),
+    status: faker.helpers.arrayElement(Object.values(StudentSelectionStatusT)),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    studentId: faker.helpers.arrayElement(students).id,
+    lecturerId: faker.helpers.arrayElement(lecturers).id,
+    fieldPoolId: faker.helpers.arrayElement(fieldPools).id,
+    preferredAt: new Date(),
+    approvedById: faker.helpers.arrayElement(lecturers).id,
+    approvedByType: faker.helpers.arrayElement(Object.values(UserT)),
+  }));
+
+  await prisma.studentSelection.createMany({ data: selections });
+  console.log(`✅ Successfully generated ${count} student selections!`);
+}
+
+async function generateProjectAllocations(count: number) {
+  const students = await prisma.student.findMany({ select: { id: true } });
+  const lecturers = await prisma.faculty.findMany({ select: { id: true } });
+
+  if (!students.length || !lecturers.length) {
+    console.log('⚠️ Không đủ dữ liệu để tạo Project Allocation.');
+    return;
+  }
+
+  const allocations = Array.from({ length: count }).map(() => ({
+    id: uuidv7(),
+    topicTitle: faker.lorem.words(5),
+    allocatedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    studentId: faker.helpers.arrayElement(students).id,
+    createdById: faker.helpers.arrayElement(lecturers).id,
+    lecturerId: faker.helpers.arrayElement(lecturers).id,
+  }));
+
+  await prisma.projectAllocation.createMany({ data: allocations });
+  console.log(`✅ Successfully generated ${count} project allocations!`);
+}
+
+// Main function
+async function main() {
+  console.log('Seeding database...');
+
+  // await seedStudents(2000);
+  // await seedFaculties(100);
+  // await seedDepartments(30);
+  // await generateFieldPools();
+  // await generateDomains();
+  // await generateLecturerSelections(100);
+  await generateStudentSelections(100);
+  await generateProjectAllocations(10);
+
+  console.log('Seeding completed!');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
