@@ -21,7 +21,6 @@ export class StudentSelectionService {
               id: true,
             },
           },
-          Tag: true,
           Student: {
             select: {
               id: true,
@@ -74,7 +73,6 @@ export class StudentSelectionService {
         select: {
           id: true,
           studentId: true,
-          facultyMemberId: true,
           preferredAt: true,
           createdAt: true,
           updatedAt: true,
@@ -84,15 +82,7 @@ export class StudentSelectionService {
               id: true,
             },
           },
-          Tag: {
-            select: {
-              Tag: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
+
           Student: {
             select: {
               id: true,

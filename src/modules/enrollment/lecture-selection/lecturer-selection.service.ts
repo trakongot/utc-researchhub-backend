@@ -38,24 +38,14 @@ export class LecturerSelectionService {
           select: {
             name: true,
             description: true,
-            FieldPoolTags: {
+            FieldPoolDomain: {
               select: {
-                Tag: {
+                Domain: {
                   select: {
                     name: true,
                     id: true,
                   },
                 },
-              },
-            },
-          },
-        },
-        Tag: {
-          select: {
-            Tag: {
-              select: {
-                name: true,
-                id: true,
               },
             },
           },

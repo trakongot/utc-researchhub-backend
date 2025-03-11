@@ -23,10 +23,16 @@ CREATE TYPE "FacultyRoleT" AS ENUM ('ADMIN', 'DEAN', 'DEPARTMENT_HEAD', 'SECRETA
 CREATE TYPE "DepartmentStatusT" AS ENUM ('ACTIVE', 'INACTIVE');
 
 -- CreateEnum
-CREATE TYPE "StudentSelectionStatusT" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+CREATE TYPE "FieldPoolStatusT" AS ENUM ('OPEN', 'CLOSED', 'HIDDEN');
 
 -- CreateEnum
-CREATE TYPE "ProposedProjectStatusT" AS ENUM ('PENDING_ADVISOR', 'REQUESTED_CHANGES_ADVISOR', 'REJECTED_BY_ADVISOR', 'ADVISOR_APPROVED', 'REQUESTED_CHANGES_HEAD', 'REJECTED_BY_HEAD', 'APPROVED_BY_HEAD');
+CREATE TYPE "LecturerSelectionStatusT" AS ENUM ('REQUESTED_CHANGES', 'PENDING', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "StudentSelectionStatusT" AS ENUM ('REQUESTED_CHANGES', 'PENDING', 'APPROVED', 'REJECTED', 'CONFIRMED');
+
+-- CreateEnum
+CREATE TYPE "ProposedProjectStatusT" AS ENUM ('PENDING_ADVISOR', 'REQUESTED_CHANGES_ADVISOR', 'REJECTED_BY_ADVISOR', 'ADVISOR_APPROVED', 'REQUESTED_CHANGES_HEAD', 'REJECTED_BY_HEAD', 'APPROVED_BY_HEAD', 'CONFIRMED_BY_HEAD', 'CONFIRMED_BY_ADVISOR');
 
 -- CreateEnum
 CREATE TYPE "ProposalStatusT" AS ENUM ('PENDING_REVIEW', 'APPROVED', 'REJECTED');
@@ -56,7 +62,7 @@ CREATE TYPE "ProjectEvaluationStatusT" AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPL
 CREATE TABLE "student" (
     "id" TEXT NOT NULL,
     "student_code" TEXT NOT NULL,
-    "major_code" TEXT,
+    "majo code" TEXT,
     "program_code" TEXT,
     "bio" TEXT,
     "full_name" VARCHAR(255) NOT NULL,
@@ -81,7 +87,7 @@ CREATE TABLE "student" (
 );
 
 -- CreateTable
-CREATE TABLE "facuty" (
+CREATE TABLE "faculty" (
     "id" TEXT NOT NULL,
     "full_name" VARCHAR(255) NOT NULL,
     "faculty_member_code" VARCHAR(50),
@@ -98,7 +104,7 @@ CREATE TABLE "facuty" (
     "rank" TEXT,
     "department_id" TEXT,
 
-    CONSTRAINT "facuty_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "faculty_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -129,8 +135,12 @@ CREATE TABLE "field_pool" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
+    "status" "FieldPoolStatusT" NOT NULL DEFAULT 'CLOSED',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "registration_deadline" TIMESTAMP(3),
+    "max_student_selection" INTEGER DEFAULT 3,
+    "max_lecturer_selection" INTEGER DEFAULT 3,
 
     CONSTRAINT "field_pool_pkey" PRIMARY KEY ("id")
 );
@@ -139,44 +149,31 @@ CREATE TABLE "field_pool" (
 CREATE TABLE "field_pool_department" (
     "field_pool_id" TEXT NOT NULL,
     "department_id" TEXT NOT NULL,
-    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "field_pool_department_pkey" PRIMARY KEY ("field_pool_id","department_id")
 );
 
 -- CreateTable
-CREATE TABLE "field_pool_tag" (
+CREATE TABLE "field_pool_domain" (
     "field_pool_id" TEXT NOT NULL,
-    "tag_id" TEXT NOT NULL,
+    "Domain_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "field_pool_tag_pkey" PRIMARY KEY ("field_pool_id","tag_id")
+    CONSTRAINT "field_pool_domain_pkey" PRIMARY KEY ("field_pool_id","Domain_id")
 );
 
 -- CreateTable
-CREATE TABLE "tag" (
+CREATE TABLE "domain" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "tag_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "lecturer_selection_tag" (
-    "lecturer_selection_id" TEXT NOT NULL,
-    "tag_id" TEXT NOT NULL,
-
-    CONSTRAINT "lecturer_selection_tag_pkey" PRIMARY KEY ("lecturer_selection_id","tag_id")
-);
-
--- CreateTable
-CREATE TABLE "student_selection_tag" (
-    "student_selection_id" TEXT NOT NULL,
-    "tag_id" TEXT NOT NULL,
-
-    CONSTRAINT "student_selection_tag_pkey" PRIMARY KEY ("student_selection_id","tag_id")
+    CONSTRAINT "domain_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -186,11 +183,13 @@ CREATE TABLE "lecturer_selection" (
     "topic_title" TEXT NOT NULL,
     "description" TEXT,
     "capacity" INTEGER NOT NULL DEFAULT 1,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "current_capacity" INTEGER NOT NULL DEFAULT 0,
+    "status" "LecturerSelectionStatusT" NOT NULL DEFAULT 'PENDING',
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "lecturer_id" TEXT NOT NULL,
     "field_pool_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "lecturer_selection_pkey" PRIMARY KEY ("id")
 );
@@ -199,13 +198,16 @@ CREATE TABLE "lecturer_selection" (
 CREATE TABLE "student_selection" (
     "id" TEXT NOT NULL,
     "priority" INTEGER NOT NULL DEFAULT 1,
-    "preferredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "topicTitle" TEXT,
     "status" "StudentSelectionStatusT" NOT NULL DEFAULT 'PENDING',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
     "student_id" TEXT NOT NULL,
-    "faculty_member_id" TEXT NOT NULL,
+    "faculty_member_id" TEXT,
     "field_pool_id" TEXT,
+    "preferred_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "approved_by_id" TEXT,
+    "approved_by_type" "UserT",
 
     CONSTRAINT "student_selection_pkey" PRIMARY KEY ("id")
 );
@@ -325,8 +327,8 @@ CREATE TABLE "project_comment" (
 -- CreateTable
 CREATE TABLE "project_keyword" (
     "id" TEXT NOT NULL,
-    "study_topic_id" TEXT NOT NULL,
-    "keyword" TEXT NOT NULL,
+    "project_id" TEXT NOT NULL,
+    "domain_id" TEXT NOT NULL,
 
     CONSTRAINT "project_keyword_pkey" PRIMARY KEY ("id")
 );
@@ -339,7 +341,6 @@ CREATE TABLE "project_final_report" (
     "file_size" INTEGER,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "department_id" TEXT,
     "uploaded_by_id" TEXT,
     "uploaded_by_type" "UserT",
 
@@ -474,14 +475,6 @@ CREATE TABLE "audit_log" (
     CONSTRAINT "audit_log_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_FieldPoolToStudentSelection" (
-    "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_FieldPoolToStudentSelection_AB_pkey" PRIMARY KEY ("A","B")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "student_student_code_key" ON "student"("student_code");
 
@@ -492,13 +485,13 @@ CREATE UNIQUE INDEX "student_email_key" ON "student"("email");
 CREATE INDEX "student_student_code_email_status_idx" ON "student"("student_code", "email", "status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "facuty_faculty_member_code_key" ON "facuty"("faculty_member_code");
+CREATE UNIQUE INDEX "faculty_faculty_member_code_key" ON "faculty"("faculty_member_code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "facuty_email_key" ON "facuty"("email");
+CREATE UNIQUE INDEX "faculty_email_key" ON "faculty"("email");
 
 -- CreateIndex
-CREATE INDEX "facuty_faculty_member_code_email_status_idx" ON "facuty"("faculty_member_code", "email", "status");
+CREATE INDEX "faculty_faculty_member_code_email_status_idx" ON "faculty"("faculty_member_code", "email", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "faculty_role_faculty_id_role_key" ON "faculty_role"("faculty_id", "role");
@@ -510,10 +503,7 @@ CREATE UNIQUE INDEX "department_name_key" ON "department"("name");
 CREATE UNIQUE INDEX "field_pool_name_key" ON "field_pool"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tag_name_key" ON "tag"("name");
-
--- CreateIndex
-CREATE INDEX "lecturer_selection_tag_lecturer_selection_id_idx" ON "lecturer_selection_tag"("lecturer_selection_id");
+CREATE UNIQUE INDEX "domain_name_key" ON "domain"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "lecturer_selection_lecturer_id_topic_title_key" ON "lecturer_selection"("lecturer_id", "topic_title");
@@ -522,7 +512,7 @@ CREATE UNIQUE INDEX "lecturer_selection_lecturer_id_topic_title_key" ON "lecture
 CREATE INDEX "student_selection_student_id_priority_idx" ON "student_selection"("student_id", "priority");
 
 -- CreateIndex
-CREATE INDEX "student_selection_faculty_member_id_createdAt_status_idx" ON "student_selection"("faculty_member_id", "createdAt", "status");
+CREATE INDEX "student_selection_faculty_member_id_created_at_status_idx" ON "student_selection"("faculty_member_id", "created_at", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "student_selection_student_id_faculty_member_id_priority_key" ON "student_selection"("student_id", "faculty_member_id", "priority");
@@ -549,7 +539,7 @@ CREATE INDEX "project_proposal_outline_id_idx" ON "project"("proposal_outline_id
 CREATE INDEX "project_department_id_idx" ON "project"("department_id");
 
 -- CreateIndex
-CREATE INDEX "project_keyword_study_topic_id_idx" ON "project_keyword"("study_topic_id");
+CREATE INDEX "project_keyword_project_id_idx" ON "project_keyword"("project_id");
 
 -- CreateIndex
 CREATE INDEX "project_final_report_study_topic_id_idx" ON "project_final_report"("study_topic_id");
@@ -590,17 +580,14 @@ CREATE INDEX "audit_log_entity_type_entity_id_created_at_idx" ON "audit_log"("en
 -- CreateIndex
 CREATE INDEX "audit_log_user_id_department_id_idx" ON "audit_log"("user_id", "department_id");
 
--- CreateIndex
-CREATE INDEX "_FieldPoolToStudentSelection_B_index" ON "_FieldPoolToStudentSelection"("B");
-
 -- AddForeignKey
 ALTER TABLE "student" ADD CONSTRAINT "student_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "facuty" ADD CONSTRAINT "facuty_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "faculty" ADD CONSTRAINT "faculty_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "faculty_role" ADD CONSTRAINT "faculty_role_faculty_id_fkey" FOREIGN KEY ("faculty_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "faculty_role" ADD CONSTRAINT "faculty_role_faculty_id_fkey" FOREIGN KEY ("faculty_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "department" ADD CONSTRAINT "department_parent_department_id_fkey" FOREIGN KEY ("parent_department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -612,55 +599,49 @@ ALTER TABLE "field_pool_department" ADD CONSTRAINT "field_pool_department_depart
 ALTER TABLE "field_pool_department" ADD CONSTRAINT "field_pool_department_field_pool_id_fkey" FOREIGN KEY ("field_pool_id") REFERENCES "field_pool"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "field_pool_tag" ADD CONSTRAINT "field_pool_tag_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tag"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "field_pool_domain" ADD CONSTRAINT "field_pool_domain_Domain_id_fkey" FOREIGN KEY ("Domain_id") REFERENCES "domain"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "field_pool_tag" ADD CONSTRAINT "field_pool_tag_field_pool_id_fkey" FOREIGN KEY ("field_pool_id") REFERENCES "field_pool"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "field_pool_domain" ADD CONSTRAINT "field_pool_domain_field_pool_id_fkey" FOREIGN KEY ("field_pool_id") REFERENCES "field_pool"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "lecturer_selection_tag" ADD CONSTRAINT "lecturer_selection_tag_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tag"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "lecturer_selection_tag" ADD CONSTRAINT "lecturer_selection_tag_lecturer_selection_id_fkey" FOREIGN KEY ("lecturer_selection_id") REFERENCES "lecturer_selection"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "student_selection_tag" ADD CONSTRAINT "student_selection_tag_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tag"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "student_selection_tag" ADD CONSTRAINT "student_selection_tag_student_selection_id_fkey" FOREIGN KEY ("student_selection_id") REFERENCES "student_selection"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "lecturer_selection" ADD CONSTRAINT "lecturer_selection_lecturer_id_fkey" FOREIGN KEY ("lecturer_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "lecturer_selection" ADD CONSTRAINT "lecturer_selection_lecturer_id_fkey" FOREIGN KEY ("lecturer_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "lecturer_selection" ADD CONSTRAINT "lecturer_selection_field_pool_id_fkey" FOREIGN KEY ("field_pool_id") REFERENCES "field_pool"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "student_selection" ADD CONSTRAINT "student_selection_faculty_member_id_fkey" FOREIGN KEY ("faculty_member_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "student_selection" ADD CONSTRAINT "student_selection_faculty_member_id_fkey" FOREIGN KEY ("faculty_member_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "student_selection" ADD CONSTRAINT "student_selection_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "student_selection" ADD CONSTRAINT "student_selection_field_pool_id_fkey" FOREIGN KEY ("field_pool_id") REFERENCES "field_pool"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "student_selection" ADD CONSTRAINT "student_selection_approved_by_id_fkey" FOREIGN KEY ("approved_by_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "project_allocation" ADD CONSTRAINT "project_allocation_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_allocation" ADD CONSTRAINT "project_allocation_lecturer_id_fkey" FOREIGN KEY ("lecturer_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_allocation" ADD CONSTRAINT "project_allocation_lecturer_id_fkey" FOREIGN KEY ("lecturer_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_allocation" ADD CONSTRAINT "project_allocation_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_allocation" ADD CONSTRAINT "project_allocation_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "proposed_project" ADD CONSTRAINT "fk_draft_topic_student" FOREIGN KEY ("created_by_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "proposed_project" ADD CONSTRAINT "fk_draft_topic_faculty" FOREIGN KEY ("created_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "proposed_project" ADD CONSTRAINT "fk_draft_topic_faculty" FOREIGN KEY ("created_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "proposed_project" ADD CONSTRAINT "proposed_project_proposal_outline_id_fkey" FOREIGN KEY ("proposal_outline_id") REFERENCES "proposal_outline"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "proposed_project" ADD CONSTRAINT "proposed_project_approved_by_id_fkey" FOREIGN KEY ("approved_by_id") REFERENCES "facuty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "proposed_project" ADD CONSTRAINT "proposed_project_approved_by_id_fkey" FOREIGN KEY ("approved_by_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "proposed_project_comment" ADD CONSTRAINT "proposed_project_comment_study_topic_darf_id_fkey" FOREIGN KEY ("study_topic_darf_id") REFERENCES "proposed_project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -669,7 +650,7 @@ ALTER TABLE "proposed_project_comment" ADD CONSTRAINT "proposed_project_comment_
 ALTER TABLE "proposal_outline" ADD CONSTRAINT "fk_proposal_student" FOREIGN KEY ("created_by_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "proposal_outline" ADD CONSTRAINT "fk_proposal_faculty" FOREIGN KEY ("created_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "proposal_outline" ADD CONSTRAINT "fk_proposal_faculty" FOREIGN KEY ("created_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_member" ADD CONSTRAINT "fk_topic_member_project" FOREIGN KEY ("topic_id") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -681,7 +662,7 @@ ALTER TABLE "project_member" ADD CONSTRAINT "fk_topic_member_draft_topic" FOREIG
 ALTER TABLE "project" ADD CONSTRAINT "project_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project" ADD CONSTRAINT "project_approved_by_id_fkey" FOREIGN KEY ("approved_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project" ADD CONSTRAINT "project_approved_by_id_fkey" FOREIGN KEY ("approved_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project" ADD CONSTRAINT "project_proposal_outline_id_fkey" FOREIGN KEY ("proposal_outline_id") REFERENCES "proposal_outline"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -693,22 +674,22 @@ ALTER TABLE "project_comment" ADD CONSTRAINT "project_comment_study_topic_id_fke
 ALTER TABLE "project_comment" ADD CONSTRAINT "fk_project_comment_student" FOREIGN KEY ("commenter_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_comment" ADD CONSTRAINT "fk_project_comment_faculty" FOREIGN KEY ("commenter_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_comment" ADD CONSTRAINT "fk_project_comment_faculty" FOREIGN KEY ("commenter_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_keyword" ADD CONSTRAINT "project_keyword_study_topic_id_fkey" FOREIGN KEY ("study_topic_id") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_keyword" ADD CONSTRAINT "project_keyword_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_keyword" ADD CONSTRAINT "project_keyword_domain_id_fkey" FOREIGN KEY ("domain_id") REFERENCES "domain"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_final_report" ADD CONSTRAINT "project_final_report_study_topic_id_fkey" FOREIGN KEY ("study_topic_id") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_final_report" ADD CONSTRAINT "project_final_report_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "project_final_report" ADD CONSTRAINT "fk_project_final_report_student" FOREIGN KEY ("uploaded_by_id") REFERENCES "student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_final_report" ADD CONSTRAINT "fk_project_final_report_faculty" FOREIGN KEY ("uploaded_by_id") REFERENCES "facuty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "project_final_report" ADD CONSTRAINT "fk_project_final_report_faculty" FOREIGN KEY ("uploaded_by_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_report_file" ADD CONSTRAINT "project_report_file_final_report_id_fkey" FOREIGN KEY ("final_report_id") REFERENCES "project_final_report"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -717,7 +698,7 @@ ALTER TABLE "project_report_file" ADD CONSTRAINT "project_report_file_final_repo
 ALTER TABLE "project_report_file" ADD CONSTRAINT "fk_project_report_file_student" FOREIGN KEY ("uploaded_by_id") REFERENCES "student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_report_file" ADD CONSTRAINT "fk_project_report_file_faculty" FOREIGN KEY ("uploaded_by_id") REFERENCES "facuty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "project_report_file" ADD CONSTRAINT "fk_project_report_file_faculty" FOREIGN KEY ("uploaded_by_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_report_comment" ADD CONSTRAINT "project_report_comment_final_report_id_fkey" FOREIGN KEY ("final_report_id") REFERENCES "project_final_report"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -726,25 +707,25 @@ ALTER TABLE "project_report_comment" ADD CONSTRAINT "project_report_comment_fina
 ALTER TABLE "project_report_comment" ADD CONSTRAINT "fk_report_comment_student" FOREIGN KEY ("user_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_report_comment" ADD CONSTRAINT "fk_report_comment_faculty" FOREIGN KEY ("user_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_report_comment" ADD CONSTRAINT "fk_report_comment_faculty" FOREIGN KEY ("user_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "defense_committee" ADD CONSTRAINT "defense_committee_study_topic_id_fkey" FOREIGN KEY ("study_topic_id") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "defense_committee" ADD CONSTRAINT "defense_committee_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "defense_committee" ADD CONSTRAINT "defense_committee_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "defense_committee_member" ADD CONSTRAINT "defense_committee_member_defense_committee_id_fkey" FOREIGN KEY ("defense_committee_id") REFERENCES "defense_committee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "defense_committee_member" ADD CONSTRAINT "defense_committee_member_faculty_member_id_fkey" FOREIGN KEY ("faculty_member_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "defense_committee_member" ADD CONSTRAINT "defense_committee_member_faculty_member_id_fkey" FOREIGN KEY ("faculty_member_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_evaluation" ADD CONSTRAINT "project_evaluation_study_topic_id_fkey" FOREIGN KEY ("study_topic_id") REFERENCES "project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_evaluation" ADD CONSTRAINT "project_evaluation_evaluated_by_id_fkey" FOREIGN KEY ("evaluated_by_id") REFERENCES "facuty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "project_evaluation" ADD CONSTRAINT "project_evaluation_evaluated_by_id_fkey" FOREIGN KEY ("evaluated_by_id") REFERENCES "faculty"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_criteria_score" ADD CONSTRAINT "project_criteria_score_criteria_id_fkey" FOREIGN KEY ("criteria_id") REFERENCES "evaluation_criteria"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -756,10 +737,10 @@ ALTER TABLE "project_criteria_score" ADD CONSTRAINT "project_criteria_score_stud
 ALTER TABLE "project_evaluation_score" ADD CONSTRAINT "project_evaluation_score_evaluation_id_fkey" FOREIGN KEY ("evaluation_id") REFERENCES "project_evaluation"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "project_evaluation_score" ADD CONSTRAINT "project_evaluation_score_committee_member_id_fkey" FOREIGN KEY ("committee_member_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "project_evaluation_score" ADD CONSTRAINT "project_evaluation_score_committee_member_id_fkey" FOREIGN KEY ("committee_member_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "evaluation_criteria" ADD CONSTRAINT "evaluation_criteria_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "evaluation_criteria" ADD CONSTRAINT "evaluation_criteria_created_by_id_fkey" FOREIGN KEY ("created_by_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "department"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -768,10 +749,4 @@ ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_department_id_fkey" FOREIGN KE
 ALTER TABLE "audit_log" ADD CONSTRAINT "fk_log_student" FOREIGN KEY ("user_id") REFERENCES "student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "audit_log" ADD CONSTRAINT "fk_log_faculty" FOREIGN KEY ("user_id") REFERENCES "facuty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_FieldPoolToStudentSelection" ADD CONSTRAINT "_FieldPoolToStudentSelection_A_fkey" FOREIGN KEY ("A") REFERENCES "field_pool"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_FieldPoolToStudentSelection" ADD CONSTRAINT "_FieldPoolToStudentSelection_B_fkey" FOREIGN KEY ("B") REFERENCES "student_selection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "audit_log" ADD CONSTRAINT "fk_log_faculty" FOREIGN KEY ("user_id") REFERENCES "faculty"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

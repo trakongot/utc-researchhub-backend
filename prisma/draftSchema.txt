@@ -1,4 +1,3 @@
-
 // model ProjectActivityLog {
 //   id           String               @id
 //   entityType   String               @map("entity_type") // "STUDY_TOPIC_DRAFT", "PROJECT"

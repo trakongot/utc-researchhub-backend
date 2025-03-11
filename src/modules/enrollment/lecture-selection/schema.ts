@@ -6,7 +6,6 @@ import {
 import { z } from 'zod';
 
 export const lecturerSelectionSchema = z.object({
-  // .uuid(ErrInvalidUUID('ID lĩnh vực')),
   id: z.string().uuid(ErrInvalidUUID('ID')).optional(),
   position: z.number().min(1, ErrRequired('Vị trí')),
   studyFieldId: z.string(),
