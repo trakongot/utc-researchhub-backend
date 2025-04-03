@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/modules/prisma/prisma.module';
+import { PrismaService } from 'src/config/database';
 import { ProjectAllocationController } from './project-allocation.controller';
 import { ProjectAllocationService } from './project-allocation.service';
 
 @Module({
-  imports: [PrismaModule],
-  providers: [ProjectAllocationService],
+  providers: [ProjectAllocationService, PrismaService],
   controllers: [ProjectAllocationController],
 })
 export class GraduationProjectAllocationsModule {}

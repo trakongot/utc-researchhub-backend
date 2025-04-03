@@ -55,7 +55,7 @@ enum GenderT {
 model Student {
   id             String         @id @default(cuid()) @map("id") // ID duy nhất của sinh viên
   studentCode    String         @unique @map("student_code") // Mã sinh viên
-  majorCode      String?        @map("majo code") // Mã ngành của sinh viên
+  majorCode      String?        @map("major_code") // Mã ngành của sinh viên
   programCode    String?        @map("program_code") // Mã chương trình học
   bio            String?        @map("bio") // Giới thiệu bản thân
   fullName       String         @map("full_name") @db.VarChar(255) // Họ và tên đầy đủ
@@ -74,10 +74,10 @@ model Student {
   profilePicture String?        @map("profile_pic") // Ảnh đại diện
   lastLogin      DateTime?      @map("last_login") // Lần đăng nhập gần nhất
   isOnline       Boolean        @default(false) @map("is_online") // Trạng thái trực tuyến
+  refreshToken   String?        @map("refresh_token")
+  departmentId   String?        @map("department_id") // Mã khoa của sinh viên
 
-  department   Department? @relation(fields: [departmentId], references: [id])
-  departmentId String?     @map("department_id") // Mã khoa của sinh viên
-
+  Department           Department?            @relation(fields: [departmentId], references: [id])
   ProjectComment       ProjectComment[]       @relation
   AuditLog             AuditLog[]             @relation
   ProposalOutline      ProposalOutline[]      @relation
@@ -88,7 +88,9 @@ model Student {
   ProjectReportFile    ProjectReportFile[]    @relation
   ProjectReportComment ProjectReportComment[] @relation
 
-  @@index([studentCode, email, status])
+  @@index([studentCode, status, departmentId])
+  @@index([email, status])
+  @@index([departmentId, status])
   @@map("student")
 }
 
@@ -114,11 +116,10 @@ model Faculty {
   profilePicture String?        @map("profile_picture")
   lastLogin      DateTime?      @map("last_login")
   isOnline       Boolean        @default(false) @map("is_online")
-
-  phoneNumber String? @map("phone_number") // Số điện thoại
-  rank        String? @map("rank") // Học hàm/học vị
-
-  departmentId String? @map("department_id")
+  phoneNumber    String?        @map("phone_number") // Số điện thoại
+  rank           String?        @map("rank") // Học hàm/học vị
+  departmentId   String?        @map("department_id")
+  refreshToken   String?        @map("refresh_token")
 
   Department               Department?              @relation(fields: [departmentId], references: [id])
   DefenseMember            DefenseMember[]          @relation
@@ -143,7 +144,9 @@ model Faculty {
   ApprovedStudentSelection StudentSelection[]       @relation("ApprovedStudentSelection")
   ProjectCriteriaScore     ProjectCriteriaScore[]
 
-  @@index([facultyCode, email, status])
+  @@index([facultyCode, status, departmentId])
+  @@index([email, status])
+  @@index([departmentId, status])
   @@map("faculty")
 }
 
@@ -215,6 +218,8 @@ model FieldPool {
   LecturerSelection   LecturerSelection[]   @relation
   FieldPoolDomain     FieldPoolDomain[]     @relation
   StudentSelection    StudentSelection[]    @relation
+  Project             Project[]             @relation
+  ProposedProject     ProposedProject[]
 
   @@map("field_pool")
 }
@@ -298,9 +303,10 @@ enum StudentSelectionStatusT {
 }
 
 model StudentSelection {
-  id             String                  @id @default(uuid()) @map("id")
-  priority       Int                     @default(1) @map("priority") // Thứ tự nguyện vọng (1 là cao nhất) 
-  topicTitle     String?                 @map("topicTitle")
+  id          String  @id @default(uuid()) @map("id")
+  priority    Int     @default(1) @map("priority") // Thứ tự nguyện vọng (1 là cao nhất) 
+  topicTitle  String? @map("topicTitle")
+  description String? @map("description")
   status         StudentSelectionStatusT @default(PENDING) @map("status")
   createdAt      DateTime                @default(now()) @map("created_at")
   updatedAt      DateTime                @updatedAt @map("updated_at")
@@ -369,13 +375,15 @@ model ProposedProject {
   proposalOutlineId String?                @map("proposal_outline_id")
   createdById       String                 @map("created_by_id")
   creatorType       UserT                  @map("creator_type")
+  fieldPoolId       String?                @map("field_pool_id")
 
-  CreatedByStudent       Student?                 @relation("ProposedProjectCreatedByStudent", fields: [createdById], references: [id], map: "fk_draft_topic_student")
-  CreatedByfaculty       Faculty?                 @relation("ProposedProjectCreatedByFaculty", fields: [createdById], references: [id], map: "fk_draft_topic_faculty")
+  CreatedByStudent       Student?                 @relation("ProposedProjectCreatedByStudent", fields: [createdById], references: [id], map: "fk_proposed_project_student")
+  CreatedByfaculty       Faculty?                 @relation("ProposedProjectCreatedByFaculty", fields: [createdById], references: [id], map: "fk_proposed_project_faculty")
   Members                ProjectMember[]          @relation()
   ProposalOutline        ProposalOutline?         @relation(fields: [proposalOutlineId], references: [id])
   ApprovedBy             Faculty?                 @relation("ProposedProjectApprovedByFaculty", fields: [approvedById], references: [id])
   ProposedProjectComment ProposedProjectComment[]
+  FieldPool              FieldPool?               @relation(fields: [fieldPoolId], references: [id])
 
   @@map("proposed_project")
 }
@@ -441,7 +449,7 @@ model ProjectMember {
   updatedAt   DateTime             @updatedAt @map("updated_at")
 
   Project         Project?         @relation(fields: [projectId], references: [id], map: "fk_topic_member_project")
-  ProposedProject ProposedProject? @relation(fields: [projectId], references: [id], map: "fk_topic_member_draft_topic")
+  ProposedProject ProposedProject? @relation(fields: [projectId], references: [id], map: "fk_topic_member_proposed_project")
 
   @@unique([projectId, memberId, projectType])
   @@index([projectId, memberId])
@@ -482,11 +490,14 @@ model Project {
   ProjectEvaluation  ProjectEvaluation[]  @relation
   DefenseCommittee   DefenseCommittee?    @relation
   ProjectFinalReport ProjectFinalReport[] @relation
+  fieldPoolId        String?              @map("field_pool_id")
+  FieldPool          FieldPool?           @relation(fields: [fieldPoolId], references: [id])
   ProjectDomain      ProjectDomain[]
 
-  @@index([type, status, createdAt])
-  @@index([proposalOutlineId])
-  @@index([departmentId])
+  @@index([type, status, departmentId, createdAt])
+  @@index([approvedById, status, createdAt])
+  @@index([proposalOutlineId, status])
+  @@index([departmentId, type, status])
   @@map("project")
 }
 
@@ -509,6 +520,8 @@ model ProjectComment {
   Student Student? @relation(fields: [commenterId], references: [id], map: "fk_project_comment_student")
   Faculty Faculty? @relation(fields: [commenterId], references: [id], map: "fk_project_comment_faculty")
 
+  @@index([projectId, createdAt])
+  @@index([commenterId, role])
   @@map("project_comment")
 }
 
@@ -663,8 +676,8 @@ model ProjectEvaluation {
   evaluatedById         String?                  @map("evaluated_by_id")
   teacherScore          Float?                   @map("teacher_score")
   committeeAverageScore Float?                   @map("committee_average_score")
-  teacherWeight         Float?                   @default(0.5) @map("teacher_weight") 
-  committeeWeight       Float?                   @default(0.5) @map("committee_weight") 
+  teacherWeight         Float?                   @default(0.5) @map("teacher_weight")
+  committeeWeight       Float?                   @default(0.5) @map("committee_weight")
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
 
@@ -745,7 +758,8 @@ model AuditLog {
   CreatedByFaculty Faculty? @relation(fields: [userId], references: [id], map: "fk_log_faculty")
 
   @@index([entityType, entityId, createdAt])
-  @@index([userId, departmentId])
+  @@index([userId, departmentId, createdAt])
+  @@index([action, createdAt])
   @@map("audit_log")
 }
 

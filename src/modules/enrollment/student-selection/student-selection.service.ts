@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/modules/prisma/prisma.service';
+import { generateApiResponse } from 'src/common/responses';
+import { PrismaService } from 'src/config/database';
 import { uuidv7 } from 'uuidv7';
-import { CreateStudentSelectionDto } from './dto/create.dto';
-import { FindStudentSelectionDto } from './dto/find.dto';
-import { UpdateStudentSelectionDto } from './dto/update.dto';
+import {
+  CreateStudentSelectionDto,
+  FindStudentSelectionDto,
+  UpdateStudentSelectionDto,
+} from './student-selection.dto';
 
 @Injectable()
 export class StudentSelectionService {
@@ -45,7 +48,10 @@ export class StudentSelectionService {
         `Không tìm thấy advising preference với ID: ${id}`,
       );
     }
-    return studentAdvisingPreference;
+    return generateApiResponse(
+      'Lấy thông tin lựa chọn thành công',
+      studentAdvisingPreference,
+    );
   }
 
   async find(dto: FindStudentSelectionDto, page: number, limit: number) {
@@ -60,14 +66,14 @@ export class StudentSelectionService {
         student: { fullName: { contains: dto.keyword, mode: 'insensitive' } },
       }),
     };
+
     const orderBy = [
       { [dto.orderBy || 'preferredAt']: dto.asc === 'asc' ? 'asc' : 'desc' },
     ];
-    const pagination: { skip: number; cursor?: { id: string } } = dto.lastId
-      ? { cursor: { id: dto.lastId }, skip: 1 }
-      : { skip: (page - 1) * limit };
 
-    const [data, total] = await this.prisma.$transaction([
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
       this.prisma.studentSelection.findMany({
         where: whereClause,
         select: {
@@ -82,7 +88,6 @@ export class StudentSelectionService {
               id: true,
             },
           },
-
           Student: {
             select: {
               id: true,
@@ -101,13 +106,20 @@ export class StudentSelectionService {
           },
         },
         take: limit,
-        ...pagination,
+        skip: skip,
         orderBy,
       }),
       this.prisma.studentSelection.count({ where: whereClause }),
     ]);
 
-    return { data, paging: { page, limit }, total };
+    const totalPages = Math.ceil(total / limit);
+
+    return generateApiResponse('Lấy danh sách lựa chọn thành công', data, {
+      page,
+      limit,
+      total,
+      totalPages,
+    });
   }
 
   async create(dto: CreateStudentSelectionDto) {
@@ -134,10 +146,12 @@ export class StudentSelectionService {
       );
     }
 
-    return this.prisma.studentSelection.update({
+    const result = await this.prisma.studentSelection.update({
       where: { id },
       data: { ...dto, updatedAt: new Date() },
     });
+
+    return generateApiResponse('Cập nhật lựa chọn thành công', result);
   }
 
   async delete(id: string) {
@@ -151,5 +165,7 @@ export class StudentSelectionService {
     }
 
     await this.prisma.studentSelection.delete({ where: { id } });
+
+    return generateApiResponse('Xóa lựa chọn thành công', null);
   }
 }

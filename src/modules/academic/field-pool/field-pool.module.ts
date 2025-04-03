@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/modules/prisma/prisma.module';
+import { PrismaService } from 'src/config/database';
 import { FieldPoolController } from './field-pool.controller';
 import { FieldPoolService } from './field-pool.service';
 
 @Module({
-  imports: [PrismaModule],
   controllers: [FieldPoolController],
-  providers: [FieldPoolService],
+  providers: [FieldPoolService, PrismaService],
 })
-export class FieldPool {}
+export class FieldPoolModule {}

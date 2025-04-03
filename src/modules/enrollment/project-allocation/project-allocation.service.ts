@@ -1,19 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, ProjectAllocation } from '@prisma/client';
-import { PrismaService } from 'src/modules/prisma/prisma.service';
-import { Paginated } from 'src/share';
+import { Prisma } from '@prisma/client';
+import { generateApiResponse } from 'src/common/responses';
+import { PrismaService } from 'src/config/database';
 import {
   CreateProjectAllocationDto,
   FindProjectAllocationDto,
   UpdateProjectAllocationDto,
-} from './dto';
+} from './project-allocation.dto';
 
 @Injectable()
 export class ProjectAllocationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateProjectAllocationDto) {
-    return this.prisma.projectAllocation.create({
+  async create(dto: CreateProjectAllocationDto, requesterId: string) {
+    const result = await this.prisma.projectAllocation.create({
       data: {
         ...dto,
         allocatedAt: new Date(),
@@ -22,13 +22,31 @@ export class ProjectAllocationService {
         createdById: '1',
       },
     });
-  }
 
-  async find(
-    dto: FindProjectAllocationDto,
-    page: number,
-    limit: number,
-  ): Promise<Paginated<ProjectAllocation>> {
+    return generateApiResponse('Tạo phân bổ đề tài thành công', result);
+  }
+  async get(id: string) {
+    const projectAllocation = await this.prisma.projectAllocation.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        topicTitle: true,
+        allocatedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        studentId: true,
+        lecturerId: true,
+        createdById: true,
+      },
+    });
+
+    if (!projectAllocation) {
+      throw new NotFoundException(`Project allocation with ID ${id} not found`);
+    }
+
+    return projectAllocation;
+  }
+  async find(dto: FindProjectAllocationDto, page: number, limit: number) {
     const whereClause: Prisma.ProjectAllocationWhereInput = {
       studentId: dto.studentId ?? undefined,
       lecturerId: dto.lecturerId ?? undefined,
@@ -77,7 +95,15 @@ export class ProjectAllocationService {
       this.prisma.projectAllocation.count({ where: whereClause }),
     ]);
 
-    return { data, paging: { page, limit }, total };
+    return generateApiResponse(
+      'Lấy danh sách phân bổ đề tài thành công',
+      data,
+      {
+        page,
+        limit,
+        total,
+      },
+    );
   }
 
   async update(id: string, dto: UpdateProjectAllocationDto) {
@@ -87,10 +113,12 @@ export class ProjectAllocationService {
     if (!existing)
       throw new NotFoundException(`Không tìm thấy phân bổ với ID: ${id}`);
 
-    return this.prisma.projectAllocation.update({
+    const result = await this.prisma.projectAllocation.update({
       where: { id },
       data: { ...dto, updatedAt: new Date() },
     });
+
+    return generateApiResponse('Cập nhật phân bổ đề tài thành công', result);
   }
 
   async delete(id: string) {
@@ -101,5 +129,7 @@ export class ProjectAllocationService {
       throw new NotFoundException(`Không tìm thấy phân bổ với ID: ${id}`);
 
     await this.prisma.projectAllocation.delete({ where: { id } });
+
+    return generateApiResponse('Xóa phân bổ đề tài thành công', null);
   }
 }

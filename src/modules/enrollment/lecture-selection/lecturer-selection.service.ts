@@ -5,14 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/modules/prisma/prisma.service';
-import { Paginated } from 'src/share';
+import { generateApiResponse } from 'src/common/responses';
+import { PrismaService } from 'src/config/database';
 import { uuidv7 } from 'uuidv7';
 import {
   CreateLecturerSelectionDto,
   FindLecturerSelectionDto,
   UpdateLecturerSelectionDto,
-} from './dto';
+} from './lecturer-selection.dto';
 
 @Injectable()
 export class LecturerSelectionService {
@@ -58,7 +58,7 @@ export class LecturerSelectionService {
     return lecturerPreference;
   }
 
-  async find(dto: FindLecturerSelectionDto, page: number, limit: number) {
+  async find(dto: FindLecturerSelectionDto) {
     const whereClause: Prisma.LecturerSelectionWhereInput = {
       ...(dto.lecturerIds?.length
         ? { lecturerId: { in: dto.lecturerIds } }
@@ -76,6 +76,9 @@ export class LecturerSelectionService {
       ...(dto.departmentId
         ? { student: { departmentId: dto.departmentId } }
         : {}),
+      ...(dto.fieldPoolId ? { fieldPoolId: dto.departmentId } : {}),
+      ...(dto.status ? { status: dto.status } : {}),
+      ...(dto.isActive ? { isActive: dto.isActive } : {}),
     };
 
     const orderByField = dto.orderBy || 'createdAt';
@@ -83,7 +86,9 @@ export class LecturerSelectionService {
     const orderBy: Prisma.LecturerSelectionOrderByWithRelationInput[] = [
       { [orderByField]: orderDirection },
     ];
-    const skip = (page - 1) * limit;
+
+    const skip = ((dto.page ?? 1) - 1) * (dto.limit ?? 10);
+    const limit = dto.limit ?? 10;
 
     const [data, total] = await Promise.all([
       this.prisma.lecturerSelection.findMany({
@@ -96,6 +101,9 @@ export class LecturerSelectionService {
           description: true,
           createdAt: true,
           updatedAt: true,
+          fieldPoolId: true,
+          capacity: true,
+          currentCapacity: true,
         },
         take: limit,
         skip,
@@ -104,11 +112,14 @@ export class LecturerSelectionService {
       this.prisma.lecturerSelection.count({ where: whereClause }),
     ]);
 
-    return {
-      data,
-      paging: { page, limit },
+    const totalPages = Math.ceil(total / limit);
+
+    return generateApiResponse('Lấy danh sách preference thành công', data, {
+      page: dto.page,
+      limit,
       total,
-    } as Paginated<(typeof data)[number]>;
+      totalPages,
+    });
   }
 
   async create(dto: CreateLecturerSelectionDto, requesterId: string) {
