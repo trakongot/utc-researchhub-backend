@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,7 +25,6 @@ import {
 import { UserT } from '@prisma/client';
 import { Response } from 'express';
 import { PermissionT } from 'src/common/constant/permissions';
-import { ReqWithRequester } from 'src/common/interface';
 import { generateApiResponse } from 'src/common/response';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import { RequirePermissions } from 'src/modules/auth/permission.decorator';
@@ -63,29 +63,47 @@ export class StorageController {
     status: 200,
     description: 'Avatar uploaded successfully',
   })
-  async uploadAvatar(@UploadedFile() file: any, @Req() req: ReqWithRequester) {
-    const result = await this.storageService.uploadFile({
-      file,
-      entityType: 'AVATAR',
-      userId: req.requester.id,
-      userType: req.requester.userType,
-      
-    });
-    console.log(req.requester);
-    if (req.requester.userType === UserT.FACULTY) {
-      console.log(result);
-      await this.storageService.updateFacultyProfilePicture(
-        req.requester.id,
-        result.url,
-      );
-    } else if (req.requester.userType === UserT.STUDENT) {
-      await this.storageService.updateStudentProfilePicture(
-        req.requester.id,
-        result.url,
-      );
-    }
+  async uploadAvatar(@UploadedFile() file: any, @Req() req: any) {
+    try {
+      // Kiểm tra file tồn tại
+      if (!file) {
+        throw new BadRequestException('No file uploaded');
+      }
 
-    return generateApiResponse('Upload ảnh đại điện thành công', result);
+      console.log('Request user:', req.user);
+
+      // Kiểm tra user đã được xác thực
+      if (!req.user || !req.user.id) {
+        throw new BadRequestException('User not authenticated or missing ID');
+      }
+
+      const result = await this.storageService.uploadFile({
+        file,
+        entityType: 'AVATAR',
+        userId: req.user.id,
+        userType: req.user.userType,
+      });
+
+      if (req.user.userType === UserT.FACULTY) {
+        await this.storageService.updateFacultyProfilePicture(
+          req.user.id,
+          result.url,
+        );
+      } else if (req.user.userType === UserT.STUDENT) {
+        await this.storageService.updateStudentProfilePicture(
+          req.user.id,
+          result.url,
+        );
+      }
+
+      return generateApiResponse('Upload ảnh đại diện thành công', result);
+    } catch (error) {
+      console.error('Avatar upload error:', {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   @Post('proposal')

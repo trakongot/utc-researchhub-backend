@@ -27,7 +27,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
    * @param exception The thrown exception
    * @param host The execution context
    */
-  catch(exception: unknown, host: ArgumentsHost): void {
+  catch(exception: Error, host: ArgumentsHost): void {
+    console.error('Exception caught:', {
+      name: exception.name,
+      message: exception.message,
+      stack: exception.stack,
+    });
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -55,7 +61,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
    * @returns Object containing HTTP status, message, and error details
    */
   private handleException(
-    exception: unknown,
+    exception: Error,
     request: Request,
   ): { status: number; message: string; error?: ApiResponseError } {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;

@@ -166,30 +166,59 @@ export class StorageService {
    * @returns Upload result with file information
    */
   async uploadFile(params: FileUploadParams): Promise<FileUploadResult> {
-    const { file, entityType, userId, userType, metadata } = params;
-
-    this.validateFile(file, entityType);
-
-    const uploadDir = this.directories[entityType];
-    const filename = this.generateUniqueFilename(file.originalname);
-    const filePath = path.join(uploadDir, filename);
-    const fileUrl = `${this.config.baseUrl}/storage/${entityType.toLowerCase()}/${filename}`;
-    console.log(params);
     try {
-      await fs.writeFile(filePath, file.buffer);
+      // Log các thông tin đầu vào để debug
+      console.log('uploadFile params:', {
+        filename: params.file?.originalname,
+        mimetype: params.file?.mimetype,
+        size: params.file?.size,
+        entityType: params.entityType,
+        userId: params.userId,
+        userType: params.userType,
+      });
 
-    //   await this.logOperation(
-    //     userId,
-    //     userType,
-    //     'UPLOAD',
-    //     entityType,
-    //     filename,
-    //     {
-    //       originalName: file.originalname,
-    //       size: file.size,
-    //       ...metadata,
-    //     },
-    //   );
+      const { file, entityType, userId, userType, metadata } = params;
+
+      // Kiểm tra file có tồn tại không
+      if (!file || !file.buffer) {
+        console.error('File buffer is missing or empty');
+        throw new BadRequestException('No file data received');
+      }
+
+      this.validateFile(file, entityType);
+
+      // Kiểm tra thư mục upload có tồn tại không
+      const uploadDir = this.directories[entityType];
+      console.log('Upload directory:', uploadDir);
+
+      try {
+        await fs.access(uploadDir);
+      } catch (error) {
+        console.error(`Directory ${uploadDir} does not exist, creating...`);
+        await fs.mkdir(uploadDir, { recursive: true });
+      }
+
+      const filename = this.generateUniqueFilename(file.originalname);
+      const filePath = path.join(uploadDir, filename);
+      const fileUrl = `${this.config.baseUrl}/storage/${entityType.toLowerCase()}/${filename}`;
+
+      console.log('Writing file to:', filePath);
+
+      await fs.writeFile(filePath, file.buffer);
+      console.log('File written successfully');
+
+      //   await this.logOperation(
+      //     userId,
+      //     userType,
+      //     'UPLOAD',
+      //     entityType,
+      //     filename,
+      //     {
+      //       originalName: file.originalname,
+      //       size: file.size,
+      //       ...metadata,
+      //     },
+      //   );
 
       return {
         filename,
@@ -200,7 +229,17 @@ export class StorageService {
         url: fileUrl,
       };
     } catch (error) {
-      await fs.unlink(filePath).catch(() => {}); // Clean up on error
+      // Log lỗi chi tiết
+      console.error('Upload error details:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+      });
+
+      if (error instanceof BadRequestException) {
+        throw error; // Trả về lỗi gốc nếu đã là BadRequestException
+      }
+
       throw new BadRequestException(`Upload failed: ${error.message}`);
     }
   }
