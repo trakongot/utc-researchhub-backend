@@ -1,25 +1,29 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-// import { FieldModule } from './modules/academic/study-field/study-field.module';
-import { AcademicModule } from './modules/academic/academic.module';
+import { PrismaModule } from './common/modules/prisma/prisma.module';
+import { StorageModule } from './common/modules/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { LecturerPreferencesModule } from './modules/enrollment/lecture-selection/lecturer-selection.module';
-import { GraduationProjectAllocationsModule } from './modules/enrollment/project-allocation/project-allocation.module';
-import { ProposalOutlineModule } from './modules/enrollment/proposal-outline/proposal-outline.module';
-import { StudentAdvisingPreferencesModule } from './modules/enrollment/student-selection/student-selection.module';
-import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { UserModule } from './modules/user/user.module';
+import { EvaluationModule } from './modules/evaluation/evaluation.module';
 @Module({
   imports: [
-    AcademicModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    StorageModule,
     AuthModule,
-    LecturerPreferencesModule,
-    GraduationProjectAllocationsModule,
-    StudentAdvisingPreferencesModule,
-    ProposalOutlineModule,
-    UserModule,
     EvaluationModule,
+    // AcademicModule,
+    UserModule,
+    // LecturerPreferencesModule,
+    // GraduationProjectAllocationsModule,
+    // StudentAdvisingPreferencesModule,
+    // ProposalOutlineModule,
+    // UserModule,
+    // EvaluationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

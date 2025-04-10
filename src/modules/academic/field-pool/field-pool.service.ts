@@ -2,14 +2,14 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { processDynamicFilters } from 'src/common/helper';
-import { ApiResponse, generateApiResponse } from 'src/common/responses';
-import { PrismaService } from 'src/config/database';
+import { PrismaService } from 'src/common/modules/prisma/prisma.service';
+import { ApiResponse, generateApiResponse } from 'src/common/response';
 import { uuidv7 } from 'uuidv7';
 import {
   createFieldPoolDto,
   FindFieldPoolDto,
   UpdateFieldPoolDto,
-} from './field-pool.dto';
+} from './schema';
 
 @Injectable()
 export class FieldPoolService {

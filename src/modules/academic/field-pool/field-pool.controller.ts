@@ -29,18 +29,18 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { ReqWithRequester } from 'src/common/interface';
 
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
+import { FieldPoolService } from './field-pool.service';
 import {
   createFieldPoolDto,
   createFieldPoolSchema,
   FindFieldPoolDto,
   findFieldPoolDtoSchema,
   UpdateFieldPoolDto,
-} from './field-pool.dto';
-import { FieldPoolService } from './field-pool.service';
+} from './schema';
 
 @ApiTags('FieldPool')
 @Controller('field-pool')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class FieldPoolController {
   private readonly logger = new Logger(FieldPoolController.name);
 

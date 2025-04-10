@@ -1,203 +1,190 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UserT } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { config } from 'src/common/config';
-import { generateApiResponse } from 'src/common/responses';
-import { PrismaService } from 'src/config/database';
-import { LoginByCodeDto } from './auth.dto';
+import { PrismaService } from 'src/common/modules/prisma/prisma.service';
+import { FacultyService } from '../user/faculty/faculty.service';
+import { StudentService } from '../user/student/student.service';
+import { LoginByCodeDto, RefreshTokenDto } from './schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly studentService: StudentService,
+    private readonly facultyService: FacultyService,
   ) {}
 
   async login(dto: LoginByCodeDto) {
-    const user = await this.validateUser(dto.code, dto.password, dto.userType);
-    const roles =
-      dto.userType === 'FACULTY'
-        ? (user as any)?.FacultyRole.map((r) => r.role)
-        : ['STUDENT'];
+    const { code, password, userType } = dto;
 
-    const payload = {
-      id: user.id,
-      code: dto.code,
-      userType: dto.userType,
-      roles,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: config.privateKeySecret,
-      expiresIn: '5m',
-    });
-
-    const refreshToken = this.jwtService.sign(
-      { id: user.id },
-      {
-        secret: config.refreshKeySecret,
-        expiresIn: '7d',
-      },
-    );
-
-    await this.updateRefreshToken(user.id, refreshToken, dto.userType);
-
-    return generateApiResponse('Đăng nhập thành công', {
-      accessToken,
-      refreshToken,
-      accessTokenExpiresIn: 300,
-      refreshTokenExpiresIn: 604800,
-      user: {
-        id: user.id,
-        code: dto.code,
-        userType: dto.userType,
-        roles,
-      },
-    });
-  }
-
-  async refreshToken(
-    userId: string,
-    refreshToken: string,
-    userType: 'FACULTY' | 'STUDENT',
-  ) {
     const user =
-      userType === 'FACULTY'
-        ? await this.prisma.faculty.findUnique({
-            where: { id: userId, status: 'ACTIVE' },
-            select: {
-              id: true,
-              email: true,
-              refreshToken: true,
-              FacultyRole: { select: { role: true } },
-            },
-          })
-        : await this.prisma.student.findUnique({
-            where: { id: userId },
-            select: {
-              id: true,
-              email: true,
-              refreshToken: true,
-            },
-          });
-
-    if (
-      !user?.refreshToken ||
-      !(await bcrypt.compare(refreshToken, user.refreshToken))
-    ) {
-      throw new UnauthorizedException('Refresh token không hợp lệ');
-    }
-
-    const roles =
-      userType === 'FACULTY'
-        ? (user as any)?.FacultyRole?.map((r) => r.role)
-        : ['STUDENT'];
-
-    const payload = {
-      id: user.id,
-      email: user.email,
-      userType,
-      roles,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: config.privateKeySecret,
-      expiresIn: '5m',
-    });
-
-    const newRefreshToken = this.jwtService.sign(
-      { id: user.id },
-      {
-        secret: config.refreshKeySecret,
-        expiresIn: '7d',
-      },
-    );
-
-    await this.updateRefreshToken(user.id, newRefreshToken, userType);
-
-    return generateApiResponse('Cập nhật refresh token thành công', {
-      accessToken,
-      refreshToken: newRefreshToken,
-    });
-  }
-
-  async logout(userId: string, userType: 'FACULTY' | 'STUDENT') {
-    if (userType === 'FACULTY') {
-      await this.prisma.faculty.update({
-        where: { id: userId },
-        data: { refreshToken: null },
-      });
-    } else {
-      await this.prisma.student.update({
-        where: { id: userId },
-        data: { refreshToken: null },
-      });
-    }
-    return generateApiResponse('Đăng xuất thành công', null);
-  }
-
-  private async updateRefreshToken(
-    userId: string,
-    refreshToken: string,
-    userType: 'FACULTY' | 'STUDENT',
-  ) {
-    if (userType === 'FACULTY') {
-      await this.prisma.faculty.update({
-        where: { id: userId },
-        data: { refreshToken: await bcrypt.hash(refreshToken, 10) },
-      });
-    } else {
-      await this.prisma.student.update({
-        where: { id: userId },
-        data: { refreshToken: await bcrypt.hash(refreshToken, 10) },
-      });
-    }
-  }
-  async validateUser(
-    code: string,
-    password: string,
-    userType: 'FACULTY' | 'STUDENT',
-  ) {
-    const user =
-      userType === 'FACULTY'
-        ? await this.prisma.faculty.findUnique({
-            where: { facultyCode: code, status: 'ACTIVE' },
-            select: {
-              id: true,
-              facultyCode: true,
-              fullName: true,
-              profilePicture: true,
-              email: true,
-              password: true,
-              refreshToken: true,
-              FacultyRole: { select: { role: true } },
-            },
-          })
-        : await this.prisma.student.findUnique({
-            where: { studentCode: code },
-            select: {
-              id: true,
-              studentCode: true,
-              fullName: true,
-              profilePicture: true,
-              email: true,
-              password: true,
-              refreshToken: true,
-            },
-          });
+      userType === UserT.FACULTY
+        ? await this.facultyService.authenticate(code, password)
+        : await this.studentService.authenticate(code, password);
 
     if (!user) {
-      throw new NotFoundException('Tài khoản không tồn tại hoặc đã bị khóa');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (!(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Mật khẩu không đúng');
+    const roles =
+      userType === UserT.FACULTY
+        ? (user as any)?.FacultyRole?.map((r) => r.role) || []
+        : ['STUDENT'];
+
+    const payload = { id: user.id, userType };
+
+    const accessTokenExpiresIn = 3600; // 1 hour in seconds
+    const refreshTokenExpiresIn = 604800; // 7 days in seconds
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: config.privateKeySecret,
+      expiresIn: `${accessTokenExpiresIn}s`,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: config.refreshKeySecret,
+      expiresIn: `${refreshTokenExpiresIn}s`,
+    });
+
+    if (userType === UserT.FACULTY) {
+      await this.facultyService.updateRefreshToken(user.id, refreshToken);
+    } else {
+      await this.studentService.updateRefreshToken(user.id, refreshToken);
     }
 
-    return user;
+    return {
+      accessToken,
+      refreshToken,
+      accessTokenExpiresIn,
+      refreshTokenExpiresIn,
+      user: { id: user.id, code, userType, roles },
+    };
+  }
+
+  /**
+   * Validates a refresh token and returns the associated user and payload
+   * @param refreshToken The refresh token to validate
+   * @param requireValidHash Whether to require a valid hash comparison with stored token
+   * @returns Object containing payload and user information
+   */
+  private async validateRefreshToken(
+    refreshToken: string,
+    requireValidHash = true,
+  ) {
+    // Verify token and extract payload
+    let payload;
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: config.refreshKeySecret,
+      });
+    } catch (error) {
+      throw new UnauthorizedException(
+        error.name === 'TokenExpiredError' ? 'Token hết hạn' : 'Token không hợp lệ',
+      );
+    }
+
+    // Validate payload contents
+    if (!payload.id || !payload.userType) {
+      throw new UnauthorizedException('Token không hợp lệ');
+    }
+
+    // Get user from database based on user type
+    const user =
+      payload.userType === UserT.FACULTY
+        ? await this.facultyService.get(payload.id)
+        : await this.studentService.get(payload.id);
+
+    // Verify user exists and has refresh token
+    if (!user || !user.refreshToken) {
+      throw new UnauthorizedException('Tài khoản không tồn tại hoặc không có token làm mới');
+    }
+
+    // Optionally verify stored hash matches provided token
+    if (requireValidHash) {
+      const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      if (!isValid) {
+        throw new UnauthorizedException('Mã hóa token không chính xác');
+      }
+    }
+
+    // Get user roles
+    const roles =
+      payload.userType === UserT.FACULTY
+        ? (user as any)?.FacultyRole?.map((r) => r.role) || []
+        : ['STUDENT'];
+
+    return { payload, user, roles };
+  }
+
+  async refreshToken(dto: RefreshTokenDto) {
+    // Validate refresh token and get user info
+    const { payload, user, roles } = await this.validateRefreshToken(
+      dto.refreshToken,
+    );
+
+    // Create clean payload without exp property
+    const newPayload = {
+      id: payload.id,
+      userType: payload.userType,
+    };
+
+    const accessTokenExpiresIn = 300; // 5 minutes in seconds
+    const refreshTokenExpiresIn = 604800; // 7 days in seconds
+
+    // Generate new access token
+    const accessToken = this.jwtService.sign(newPayload, {
+      secret: config.privateKeySecret,
+      expiresIn: `${accessTokenExpiresIn}s`,
+    });
+
+    // Generate new refresh token
+    const newRefreshToken = this.jwtService.sign(newPayload, {
+      secret: config.refreshKeySecret,
+      expiresIn: `${refreshTokenExpiresIn}s`,
+    });
+
+    // Update refresh token in database
+    if (payload.userType === UserT.FACULTY) {
+      await this.facultyService.updateRefreshToken(user.id, newRefreshToken);
+    } else {
+      await this.studentService.updateRefreshToken(user.id, newRefreshToken);
+    }
+
+    // Return new tokens
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      accessTokenExpiresIn,
+      refreshTokenExpiresIn,
+      roles,
+    };
+  }
+
+  async logout(refreshToken: string) {
+    // Check if token exists
+    if (!refreshToken) {
+      throw new UnauthorizedException('Không có token làm mới được cung cấp');
+    }
+
+    // Validate token
+    const { payload } = await this.validateRefreshToken(refreshToken, false);
+
+    // Clear refresh token in database
+    if (payload.userType === UserT.FACULTY) {
+      await this.prisma.faculty.update({
+        where: { id: payload.id },
+        data: { refreshToken: null },
+      });
+    } else {
+      await this.prisma.student.update({
+        where: { id: payload.id },
+        data: { refreshToken: null },
+      });
+    }
+
+    return { success: true };
   }
 }

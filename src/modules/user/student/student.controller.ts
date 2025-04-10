@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -22,19 +23,24 @@ import {
 
 import { ZodValidationPipe } from 'nestjs-zod';
 import { ReqWithRequester } from 'src/common/interface';
+import { RequirePermissions } from 'src/modules/auth/permission.decorator';
+
+import { PermissionT } from 'src/common/constant';
+import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
 import {
   CreateStudentDto,
   FindStudentDto,
+  StudentResponseDto,
   UpdateStudentDto,
-} from './student.dto.ts';
+} from './schema';
 import { StudentService } from './student.service';
 
 @ApiTags('Students')
 @Controller('students')
-@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth('access-token')
 export class StudentController {
   constructor(private readonly service: StudentService) {}
-
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -42,34 +48,25 @@ export class StudentController {
     description: 'Creates a new student account',
   })
   @ApiBody({
-    schema: {},
+    type: CreateStudentDto,
     description: 'Student information',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Student created successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input data',
   })
+  // @RequirePermissions(PermissionT.MANAGE_STUDENT)
   async create(
     @Body(new ZodValidationPipe(CreateStudentDto))
     dto: CreateStudentDto,
     @Request() req: ReqWithRequester,
   ) {
-    try {
-      const result = await this.service.create(dto);
-      return {
-        data: result,
-        message: 'Tạo sinh viên thành công',
-        statusCode: HttpStatus.CREATED,
-      };
-    } catch (error) {
-      // Error will be caught by the global exception filter
-      throw error;
-    }
+    return await this.service.create(dto);
   }
 
   @Get(':id')
@@ -81,19 +78,15 @@ export class StudentController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Student retrieved successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Student not found',
   })
+  @RequirePermissions(PermissionT.VIEW_STUDENT)
   async get(@Param('id') id: string) {
-    const result = await this.service.get(id);
-    return {
-      data: result,
-      message: 'Lấy thông tin sinh viên thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.get(id);
   }
 
   @Get('profile/:id')
@@ -105,19 +98,15 @@ export class StudentController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile retrieved successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Student not found',
   })
+  @RequirePermissions(PermissionT.VIEW_STUDENT)
   async getPublicProfile(@Param('id') id: string) {
-    const result = await this.service.get(id);
-    return {
-      data: result,
-      message: 'Lấy thông tin sinh viên thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.get(id);
   }
 
   @Get('profile/me')
@@ -129,17 +118,10 @@ export class StudentController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile retrieved successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   async getProfile(@Request() req: ReqWithRequester) {
-    // The user ID is obtained from the authenticated user in the request
-    const userId = req.requester.sub;
-    const result = await this.service.get(userId);
-    return {
-      data: result,
-      message: 'Lấy thông tin cá nhân thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.get(req.requester.id);
   }
 
   @Get()
@@ -170,20 +152,15 @@ export class StudentController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Students retrieved successfully',
-    schema: {},
+    type: StudentResponseDto,
+    isArray: true,
   })
+  @RequirePermissions(PermissionT.VIEW_STUDENT)
   async find(
     @Query(new ZodValidationPipe(FindStudentDto))
     query: FindStudentDto,
   ) {
-    const result = await this.service.find(query);
-    return {
-      data: result.data,
-      paging: result.paging,
-      total: result.total,
-      message: 'Thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.find(query);
   }
 
   @Patch(':id')
@@ -193,30 +170,26 @@ export class StudentController {
     description: 'Updates student information',
   })
   @ApiBody({
-    schema: {},
+    type: UpdateStudentDto,
     description: 'Student information to update',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Student updated successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Student not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_STUDENT)
   async update(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateStudentDto))
     dto: UpdateStudentDto,
     @Request() req: ReqWithRequester,
   ) {
-    const result = await this.service.update(id, dto);
-    return {
-      data: result,
-      message: 'Cập nhật sinh viên thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.update(id, dto);
   }
 
   @Patch('profile/me')
@@ -226,41 +199,39 @@ export class StudentController {
     description: 'Updates the profile of the currently logged in student',
   })
   @ApiBody({
-    schema: {},
+    type: UpdateStudentDto,
     description: 'Student information to update',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile updated successfully',
-    schema: {},
+    type: StudentResponseDto,
   })
   async updateProfile(
     @Body(new ZodValidationPipe(UpdateStudentDto))
     dto: UpdateStudentDto,
     @Request() req: ReqWithRequester,
   ) {
-    // The user ID is obtained from the authenticated user in the request
-    const userId = req.requester.sub;
-    const result = await this.service.update(userId, dto);
-    return {
-      data: result,
-      message: 'Cập nhật thông tin cá nhân thành công',
-      statusCode: HttpStatus.OK,
-    };
+    const userId = req.requester.id;
+    return await this.service.update(userId, dto);
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete student', description: 'Deletes a student' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Delete student',
+    description: 'Deletes a student account',
+  })
   @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
+    status: HttpStatus.OK,
     description: 'Student deleted successfully',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Student not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_STUDENT)
   async delete(@Param('id') id: string) {
-    await this.service.delete(id);
+    return await this.service.delete(id);
   }
 }

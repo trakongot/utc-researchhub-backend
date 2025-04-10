@@ -16,7 +16,7 @@ enum UserT {
   FACULTY
 }
 
-enum TopicT {
+enum ProjectT {
   GRADUATED // Đồ án
   RESEARCH // Nghiên cứu khoa học''
   COMPETITION // Dự án thi đấu
@@ -53,30 +53,29 @@ enum GenderT {
 }
 
 model Student {
-  id             String         @id @default(cuid()) @map("id") // ID duy nhất của sinh viên
-  studentCode    String         @unique @map("student_code") // Mã sinh viên
-  majorCode      String?        @map("major_code") // Mã ngành của sinh viên
-  programCode    String?        @map("program_code") // Mã chương trình học
-  bio            String?        @map("bio") // Giới thiệu bản thân
-  fullName       String         @map("full_name") @db.VarChar(255) // Họ và tên đầy đủ
-  email          String         @unique @map("email") @db.VarChar(255) // Email
-  password       String         @map("password") // Mật khẩu
-  phone          String?        @map("phone") @db.VarChar(20) // Số điện thoại
-  dateOfBirth    DateTime?      @map("date_of_birth") // Ngày sinh
-  gender         GenderT?       @map("gender") // Giới tính
-  admissionYear  Int?           @map("admission_year") // Năm nhập học
-  graduationYear Int?           @map("graduation_year") // Năm tốt nghiệp dự kiến
-  currentGpa     Float?         @map("current_gpa") // Điểm trung bình tích lũy (GPA)
-  creditsEarned  Int?           @map("credits_earned") // Số tín chỉ tích lũy
-  status         StudentStatusT @default(ACTIVE) @map("status") // Trạng thái sinh viên
-  createdAt      DateTime       @default(now()) @map("created_at") // Ngày tạo hồ sơ
-  updatedAt      DateTime       @updatedAt @map("updated_at") // Ngày cập nhật hồ sơ gần nhất
-  profilePicture String?        @map("profile_pic") // Ảnh đại diện
-  lastLogin      DateTime?      @map("last_login") // Lần đăng nhập gần nhất
-  isOnline       Boolean        @default(false) @map("is_online") // Trạng thái trực tuyến
-  refreshToken   String?        @map("refresh_token")
-  departmentId   String?        @map("department_id") // Mã khoa của sinh viên
-
+  id                   String                 @id @default(cuid()) @map("id") // ID duy nhất của sinh viên
+  studentCode          String                 @unique @map("student_code") // Mã sinh viên
+  majorCode            String?                @map("major_code") // Mã ngành của sinh viên
+  programCode          String?                @map("program_code") // Mã chương trình học
+  bio                  String?                @map("bio") // Giới thiệu bản thân
+  fullName             String                 @map("full_name") @db.VarChar(255) // Họ và tên đầy đủ
+  email                String                 @unique @map("email") @db.VarChar(255) // Email
+  password             String                 @map("password") // Mật khẩu
+  phone                String?                @map("phone") @db.VarChar(20) // Số điện thoại
+  dateOfBirth          DateTime?              @map("date_of_birth") // Ngày sinh
+  gender               GenderT?               @map("gender") // Giới tính
+  admissionYear        Int?                   @map("admission_year") // Năm nhập học
+  graduationYear       Int?                   @map("graduation_year") // Năm tốt nghiệp dự kiến
+  currentGpa           Float?                 @map("current_gpa") // Điểm trung bình tích lũy (GPA)
+  creditsEarned        Int?                   @map("credits_earned") // Số tín chỉ tích lũy
+  status               StudentStatusT         @default(ACTIVE) @map("status") // Trạng thái sinh viên
+  createdAt            DateTime               @default(now()) @map("created_at") // Ngày tạo hồ sơ
+  updatedAt            DateTime               @updatedAt @map("updated_at") // Ngày cập nhật hồ sơ gần nhất
+  profilePicture       String?                @map("profile_pic") // Ảnh đại diện
+  lastLogin            DateTime?              @map("last_login") // Lần đăng nhập gần nhất
+  isOnline             Boolean                @default(false) @map("is_online") // Trạng thái trực tuyến
+  refreshToken         String?                @map("refresh_token")
+  departmentId         String?                @map("department_id") // Mã khoa của sinh viên
   Department           Department?            @relation(fields: [departmentId], references: [id])
   ProjectComment       ProjectComment[]       @relation
   AuditLog             AuditLog[]             @relation
@@ -87,6 +86,8 @@ model Student {
   ProjectFinalReport   ProjectFinalReport[]   @relation
   ProjectReportFile    ProjectReportFile[]    @relation
   ProjectReportComment ProjectReportComment[] @relation
+  NotificationsSent    Notification[]         @relation("StudentSentNotifications")
+  Notification         Notification[]         @relation("StudentNotifications")
 
   @@index([studentCode, status, departmentId])
   @@index([email, status])
@@ -121,28 +122,29 @@ model Faculty {
   departmentId   String?        @map("department_id")
   refreshToken   String?        @map("refresh_token")
 
-  Department               Department?              @relation(fields: [departmentId], references: [id])
-  DefenseMember            DefenseMember[]          @relation
-  ProjectEvaluationScore   ProjectEvaluationScore[] @relation
-  ProjectEvaluation        ProjectEvaluation[]      @relation
-  FacultyRole              FacultyRole[]            @relation
-  EvaluationCriteria       EvaluationCriteria[]     @relation
-  ProjectComment           ProjectComment[]         @relation
-  Project                  Project[]                @relation
-  AuditLog                 AuditLog[]               @relation
-  ProposalOutline          ProposalOutline[]        @relation
-  ProposedProjectCreated   ProposedProject[]        @relation("ProposedProjectCreatedByFaculty")
-  ProposedProjectApproved  ProposedProject[]        @relation("ProposedProjectApprovedByFaculty")
-  DefenseCommittee         DefenseCommittee[]       @relation
-  LecturerSelection        LecturerSelection[]      @relation
-  ProjectFinalReport       ProjectFinalReport[]     @relation
-  ProjectReportFile        ProjectReportFile[]      @relation
-  ProjectReportComment     ProjectReportComment[]   @relation
-  ProjectAllocationCreated ProjectAllocation[]      @relation("ProjectAllocationCreatedByFaculty")
-  LecturerRelation         ProjectAllocation[]      @relation("ProjectAllocationSelectedByLecturer")
-  StudentSelection         StudentSelection[]       @relation("LecturerSelectedByStudent")
-  ApprovedStudentSelection StudentSelection[]       @relation("ApprovedStudentSelection")
+  Department               Department?            @relation(fields: [departmentId], references: [id])
+  DefenseMember            DefenseMember[]        @relation
+  ProjectEvaluation        ProjectEvaluation[]    @relation
+  FacultyRole              FacultyRole[]          @relation
+  EvaluationCriteria       EvaluationCriteria[]   @relation
+  ProjectComment           ProjectComment[]       @relation
+  Project                  Project[]              @relation
+  AuditLog                 AuditLog[]             @relation
+  ProposalOutline          ProposalOutline[]      @relation
+  ProposedProjectCreated   ProposedProject[]      @relation("ProposedProjectCreatedByFaculty")
+  ProposedProjectApproved  ProposedProject[]      @relation("ProposedProjectApprovedByFaculty")
+  DefenseCommittee         DefenseCommittee[]     @relation
+  LecturerSelection        LecturerSelection[]    @relation
+  ProjectFinalReport       ProjectFinalReport[]   @relation
+  ProjectReportFile        ProjectReportFile[]    @relation
+  ProjectReportComment     ProjectReportComment[] @relation
+  ProjectAllocationCreated ProjectAllocation[]    @relation("ProjectAllocationCreatedByFaculty")
+  LecturerRelation         ProjectAllocation[]    @relation("ProjectAllocationSelectedByLecturer")
+  StudentSelection         StudentSelection[]     @relation("LecturerSelectedByStudent")
+  ApprovedStudentSelection StudentSelection[]     @relation("ApprovedStudentSelection")
   ProjectCriteriaScore     ProjectCriteriaScore[]
+  NotificationsReceived    Notification[]         @relation("FacultyNotifications")
+  NotificationsSent        Notification[]         @relation("FacultySentNotifications")
 
   @@index([facultyCode, status, departmentId])
   @@index([email, status])
@@ -219,7 +221,7 @@ model FieldPool {
   FieldPoolDomain     FieldPoolDomain[]     @relation
   StudentSelection    StudentSelection[]    @relation
   Project             Project[]             @relation
-  ProposedProject     ProposedProject[]
+  ProposedProject     ProposedProject[]     @relation
 
   @@map("field_pool")
 }
@@ -303,10 +305,10 @@ enum StudentSelectionStatusT {
 }
 
 model StudentSelection {
-  id          String  @id @default(uuid()) @map("id")
-  priority    Int     @default(1) @map("priority") // Thứ tự nguyện vọng (1 là cao nhất) 
-  topicTitle  String? @map("topicTitle")
-  description String? @map("description")
+  id             String                  @id @default(uuid()) @map("id")
+  priority       Int                     @default(1) @map("priority") // Thứ tự nguyện vọng (1 là cao nhất) 
+  topicTitle     String?                 @map("topicTitle")
+  description    String?                 @map("description")
   status         StudentSelectionStatusT @default(PENDING) @map("status")
   createdAt      DateTime                @default(now()) @map("created_at")
   updatedAt      DateTime                @updatedAt @map("updated_at")
@@ -440,7 +442,7 @@ enum ProjectMemberStatusT {
 model ProjectMember {
   id          String               @id
   projectId   String               @map("topic_id")
-  projectType TopicT               @map("topic_type")
+  projectType ProjectT             @map("topic_type")
   memberId    String               @map("member_id")
   role        UserT                @map("role")
   descRole    String?              @map("desc_role")
@@ -466,7 +468,7 @@ enum ProjectStatusT {
 
 model Project {
   id                String         @id
-  type              TopicT         @map("type")
+  type              ProjectT       @map("type")
   title             String         @map("title")
   description       String?        @map("description") // Mô tả đề tài
   field             String         @map("field") // Lĩnh vực/ngành
@@ -561,33 +563,34 @@ model ProjectFinalReport {
   @@map("project_final_report")
 }
 
-enum ReportFileStatusT {
+enum ProjectReportFileStatusT {
   PENDING
   APPROVED
   REJECTED
 }
 
 model ProjectReportFile {
-  id            String             @id
-  finalReport   ProjectFinalReport @relation(fields: [finalReportId], references: [id])
-  finalReportId String             @map("final_report_id")
-  fileType      FileT              @map("file_type")
-  fileUrl       String             @map("file_url")
-  fileSize      Int?               @map("file_size")
-  isArchived    Boolean            @map("is_archived")
-  status        ReportFileStatusT  @default(PENDING) @map("status")
-  description   String?            @map("description") // Mô tả file
+  id            String                   @id @default(uuid()) // Thêm default
+  finalReport   ProjectFinalReport       @relation(fields: [finalReportId], references: [id])
+  finalReportId String                   @map("final_report_id")
+  fileType      FileT                    @map("file_type")
+  fileUrl       String                   @map("file_url")
+  fileSize      Int?                     @map("file_size")
+  isArchived    Boolean                  @default(false) @map("is_archived") // Thêm default
+  status        ProjectReportFileStatusT @default(PENDING) @map("status")
+  description   String?                  @map("description") // Mô tả file
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  uploadedById String? @map("uploaded_by_id")
+  uploadedById   String? @map("uploaded_by_id")
+  uploadedByType UserT?  @map("uploaded_by_type")
 
-  UploadedByStudent  Student? @relation(fields: [uploadedById], references: [id], map: "fk_project_report_file_student")
-  UploadedByLecturer Faculty? @relation(fields: [uploadedById], references: [id], map: "fk_project_report_file_faculty")
+  UploadedByStudent  Student? @relation(fields: [uploadedById], references: [id], map: "fk_project_report_file_student", onDelete: SetNull, onUpdate: Cascade) // Thêm onDelete, onUpdate
+  UploadedByLecturer Faculty? @relation(fields: [uploadedById], references: [id], map: "fk_project_report_file_faculty", onDelete: SetNull, onUpdate: Cascade) // Thêm onDelete, onUpdate
 
   @@index([finalReportId])
-  @@index([isArchived])
+  @@index([uploadedById, uploadedByType])
   @@map("project_report_file")
 }
 
@@ -661,7 +664,6 @@ model DefenseMember {
 }
 
 // --------------------------- EVALUATION RESULT PROJECT ------------------------
-
 enum ProjectEvaluationStatusT {
   PENDING // Chưa chấm điểm
   IN_PROGRESS // Đang chấm
@@ -669,60 +671,47 @@ enum ProjectEvaluationStatusT {
 }
 
 model ProjectEvaluation {
-  id                    String                   @id
-  ProjectId             String                   @unique @map("project_id")
+  id                    String                   @id @default(uuid()) // Thay đổi default nếu cần
+  projectId             String                   @unique @map("project_id")
+  // finalScore được tính toán dựa trên ProjectCriteriaScore theo trọng số và có thể cả điểm của GVHD.
+  // Logic tính toán nằm ở tầng service.
   finalScore            Float?                   @map("final_score")
-  status                ProjectEvaluationStatusT @map("status")
-  evaluatedById         String?                  @map("evaluated_by_id")
+  status                ProjectEvaluationStatusT @default(PENDING) @map("status") // Thêm default
+  evaluatedById         String?                  @map("evaluated_by_id") // ID của người đánh giá chính (có thể là GVHD hoặc thư ký)
+  // teacherScore là điểm do Giảng viên hướng dẫn (Advisor) chấm.
   teacherScore          Float?                   @map("teacher_score")
-  committeeAverageScore Float?                   @map("committee_average_score")
+  committeeAverageScore Float?                   @map("committee_average_score") // Có thể bỏ nếu finalScore đã đủ? Xem xét lại.
   teacherWeight         Float?                   @default(0.5) @map("teacher_weight")
   committeeWeight       Float?                   @default(0.5) @map("committee_weight")
   createdAt             DateTime                 @default(now()) @map("created_at")
   updatedAt             DateTime                 @updatedAt @map("updated_at")
 
-  Score              ProjectEvaluationScore[] @relation
-  CriteriaScores     ProjectCriteriaScore[]   @relation
-  Project            Project                  @relation(fields: [ProjectId], references: [id])
-  EvaluatedByFaculty Faculty?                 @relation(fields: [evaluatedById], references: [id])
+  // ProjectEvaluationScore đã bị bỏ. Điểm chi tiết xem ở ProjectCriteriaScore.
+  CriteriaScores     ProjectCriteriaScore[] @relation
+  Project            Project                @relation(fields: [projectId], references: [id])
+  EvaluatedByFaculty Faculty?               @relation(fields: [evaluatedById], references: [id])
 
   @@map("project_evaluation")
 }
 
 model ProjectCriteriaScore {
-  id            String  @id
+  id            String  @id @default(uuid()) // Thay đổi default nếu cần
   projectEvalId String  @map("project_eval_id")
   criteriaId    String  @map("criteria_id")
-  evaluatorId   String  @map("evaluator_id")
+  evaluatorId   String  @map("evaluator_id") // ID của người chấm điểm tiêu chí này (GVHD hoặc thành viên hội đồng)
   score         Float   @default(0.0) @map("score")
   comment       String? @map("comment")
 
   EvaluationCriteria EvaluationCriteria @relation(fields: [criteriaId], references: [id])
   ProjectEvaluation  ProjectEvaluation  @relation(fields: [projectEvalId], references: [id])
-  Evaluator          Faculty            @relation(fields: [evaluatorId], references: [id])
+  Evaluator          Faculty            @relation(fields: [evaluatorId], references: [id]) // Người đánh giá luôn là Faculty
 
+  @@unique([projectEvalId, criteriaId, evaluatorId]) // Đảm bảo mỗi người chỉ chấm 1 lần cho 1 tiêu chí
   @@map("project_criteria_score")
 }
 
-model ProjectEvaluationScore {
-  id                  String                 @id
-  role                DefenseCommitteeRoleT? @map("role")
-  score               Float                  @map("score")
-  comment             String?                @map("comment")
-  createdAt           DateTime               @default(now()) @map("created_at")
-  updatedAt           DateTime               @updatedAt @map("updated_at")
-  ProjectEvaluationId String                 @map("project_evaluation_id")
-  committeeMemberId   String                 @map("committee_member_id")
-
-  Evaluation      ProjectEvaluation @relation(fields: [ProjectEvaluationId], references: [id])
-  CommitteeMember Faculty           @relation(fields: [committeeMemberId], references: [id])
-
-  @@unique([committeeMemberId])
-  @@map("project_evaluation_score")
-}
-
 model EvaluationCriteria {
-  id          String   @id
+  id          String   @id @default(uuid()) // Thay đổi default nếu cần
   name        String   @map("name") // Tên tiêu chí
   description String?  @map("description") // Mô tả tiêu chí
   weight      Float    @default(1.0) @map("weight") // Trọng số tiêu chí
@@ -739,10 +728,10 @@ model EvaluationCriteria {
 // --------------------------- LOG SYSTEM ------------------------
 
 model AuditLog {
-  id         String   @id
-  entityType String   @map("entity_type") // Ví dụ: "PROJECT", "TASK", "SYSTEM_CONFIG"
+  id         String   @id @default(uuid()) // Thay đổi default nếu cần
+  entityType String   @map("entity_type") // Ví dụ: "PROJECT", "TASK", "SYSTEM_CONFIG", "FILE_UPLOAD"
   entityId   String?  @map("entity_id") // ID của đối tượng liên quan (Project, Task,...)
-  action     String   @map("action") // "CREATE", "UPDATE", "APPROVE", "SUBMIT"
+  action     String   @map("action") // "CREATE", "UPDATE", "APPROVE", "SUBMIT", "DELETE", "UPLOAD"
   oldValue   String?  @map("old_value") // Giá trị trước khi thay đổi
   newValue   String?  @map("new_value") // Giá trị sau khi thay đổi
   metadata   Json?    @map("metadata") // Lưu thông tin bổ sung (VD: chi tiết thay đổi)
@@ -751,16 +740,56 @@ model AuditLog {
   departmentId String?     @map("department_id")
   department   Department? @relation(fields: [departmentId], references: [id])
 
+  // userId và userType xác định người thực hiện hành động.
+  // Quan trọng: Logic code phải kiểm tra sự tồn tại của user trước khi tạo log.
   userId   String @map("user_id")
   userType UserT  @map("user_type")
 
-  CreatedByStudent Student? @relation(fields: [userId], references: [id], map: "fk_log_student")
-  CreatedByFaculty Faculty? @relation(fields: [userId], references: [id], map: "fk_log_faculty")
+  CreatedByStudent Student? @relation(fields: [userId], references: [id], map: "fk_log_student", onDelete: NoAction, onUpdate: NoAction) // Thêm onDelete, onUpdate để rõ ràng
+  CreatedByFaculty Faculty? @relation(fields: [userId], references: [id], map: "fk_log_faculty", onDelete: NoAction, onUpdate: NoAction) // Thêm onDelete, onUpdate để rõ ràng
 
   @@index([entityType, entityId, createdAt])
-  @@index([userId, departmentId, createdAt])
+  @@index([userId, userType, createdAt])
   @@index([action, createdAt])
   @@map("audit_log")
 }
 
 // --------------------------- NOTIFICATION SYSTEM ------------------------
+
+enum NotificationType {
+  INFO // Thông báo chung
+  WARNING // Cảnh báo
+  DEADLINE // Nhắc nhở hạn chót
+  TASK_ASSIGNED // Giao nhiệm vụ
+  COMMENT_MENTION // Được nhắc đến trong bình luận
+  PROPOSAL_STATUS_CHANGE // Thay đổi trạng thái đề xuất
+  OUTLINE_STATUS_CHANGE // Thay đổi trạng thái đề cương
+  REVISION_REQUEST // Yêu cầu chỉnh sửa (đề cương, báo cáo)
+  GRADE_AVAILABLE // Có điểm mới
+  MEETING_SCHEDULED // Lịch họp
+  SYSTEM_UPDATE // Cập nhật hệ thống
+}
+
+model Notification {
+  id                String           @id @default(uuid())
+  recipientId       String           @map("recipient_id")
+  recipientType     UserT            @map("recipient_type")
+  senderId          String?          @map("sender_id") // Có thể là system (null) hoặc user
+  senderType        UserT?           @map("sender_type")
+  type              NotificationType @map("type")
+  title             String           @map("title")
+  message           String           @map("message")
+  relatedEntityType String?          @map("related_entity_type") // Ví dụ: "PROJECT", "PROPOSAL_OUTLINE", "PROJECT_REPORT"
+  relatedEntityId   String?          @map("related_entity_id") // ID của entity liên quan
+  isRead            Boolean          @default(false) @map("is_read")
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  RecipientStudent Student? @relation("StudentNotifications", fields: [recipientId], references: [id], onDelete: Cascade, map: "notification_recipient_student_fkey") // Xóa noti nếu user bị xóa
+  RecipientFaculty Faculty? @relation("FacultyNotifications", fields: [recipientId], references: [id], onDelete: Cascade, map: "notification_recipient_faculty_fkey") // Xóa noti nếu user bị xóa
+  // Quan hệ cho người gửi (tùy chọn)
+  SenderStudent    Student? @relation("StudentSentNotifications", fields: [senderId], references: [id], onDelete: SetNull, map: "notification_sender_student_fkey") // Giữ lại noti nếu người gửi bị xóa
+  SenderFaculty    Faculty? @relation("FacultySentNotifications", fields: [senderId], references: [id], onDelete: SetNull, map: "notification_sender_faculty_fkey") // Giữ lại noti nếu người gửi bị xóa
+
+  @@index([recipientId, recipientType, isRead, createdAt])
+  @@map("notification")
+}

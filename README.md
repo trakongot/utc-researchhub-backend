@@ -25,3 +25,4 @@ Tài liệu chi tiết: <a href="https://docs.google.com/document/d/1bQ0rWE2UWlk
 | 8   | `test`      | Adding missing tests or correcting existing tests                                                     | `test: add test find all function`      |
 | 9   | `todo`      | Mark todo work, add tags TODO                                                                         | `todo: add test find all function`      |
 | 10  | `update`    | Small update                                                                                          | `update: add test find all function`    |
+

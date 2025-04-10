@@ -4,46 +4,37 @@
 
 // @Injectable()
 // export class RateLimitMiddleware implements NestMiddleware {
-//   private readonly WINDOW_MS = 15 * 60 * 1000; // 15 phút
-//   private readonly MAX_REQUESTS = 100; // Tối đa 100 requests trong 15 phút
-
 //   constructor(private readonly redisService: RedisService) {}
 
 //   async use(req: Request, res: Response, next: NextFunction) {
 //     const ip = req.ip;
-//     const key = `rate_limit:${ip}`;
+//     const key = `rate-limit:${ip}`;
 
 //     try {
-//       // Lấy số lượng requests hiện tại
-//       const current = await this.redisService.get(key);
-//       const count = current ? parseInt(current) : 0;
+//       const current = await this.redisService.incr(key);
 
-//       // Kiểm tra nếu vượt quá giới hạn
-//       if (count >= this.MAX_REQUESTS) {
+//       // Set expiration if this is the first request
+//       if (current === 1) {
+//         await this.redisService.set(key, '1', 900); // 15 minutes
+//       }
+
+//       // Set rate limit headers
+//       res.setHeader('X-RateLimit-Limit', '100');
+//       res.setHeader('X-RateLimit-Remaining', Math.max(0, 100 - current));
+//       res.setHeader('X-RateLimit-Reset', Math.floor(Date.now() / 1000) + 900);
+
+//       // Check if rate limit exceeded
+//       if (current > 100) {
 //         return res.status(429).json({
-//           status: 'error',
-//           message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau.',
-//           retryAfter: Math.ceil(this.WINDOW_MS / 1000),
+//           statusCode: 429,
+//           message: 'Too Many Requests',
+//           error: 'Rate limit exceeded. Please try again later.',
 //         });
 //       }
 
-//       // Tăng số lượng requests
-//       if (count === 0) {
-//         // Nếu là request đầu tiên, set key với thời gian hết hạn
-//         await this.redisService.set(key, '1', this.WINDOW_MS / 1000);
-//       } else {
-//         // Nếu đã có requests, tăng số lượng
-//         await this.redisService.incr(key);
-//       }
-
-//       // Thêm headers để client biết giới hạn
-//       res.setHeader('X-RateLimit-Limit', this.MAX_REQUESTS);
-//       res.setHeader('X-RateLimit-Remaining', this.MAX_REQUESTS - (count + 1));
-//       res.setHeader('X-RateLimit-Reset', Date.now() + this.WINDOW_MS);
-
 //       next();
 //     } catch (error) {
-//       // Nếu có lỗi với Redis, cho phép request tiếp tục
+//       // If Redis fails, allow the request to proceed
 //       console.error('Rate limit error:', error);
 //       next();
 //     }

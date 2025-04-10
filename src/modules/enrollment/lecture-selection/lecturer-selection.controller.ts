@@ -22,9 +22,10 @@ import {
 } from '@nestjs/swagger';
 
 import { ReqWithRequester } from 'src/common/interface';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { ApiResponse } from 'src/common/responses';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
+import { ApiResponse } from 'src/common/response';
 
+import { LecturerSelectionService } from './lecturer-selection.service';
 import {
   CreateLecturerSelectionDto,
   createLecturerSelectionDtoSchema,
@@ -32,12 +33,11 @@ import {
   findLecturerSelectionDtoSchema,
   UpdateLecturerSelectionDto,
   updateLecturerSelectionDtoSchema,
-} from './lecturer-selection.dto';
-import { LecturerSelectionService } from './lecturer-selection.service';
+} from './schema';
 
 @ApiTags('Lecturer Selection')
 @Controller('lecturer-selection')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class LecturerSelectionController {
   constructor(private readonly service: LecturerSelectionService) {}
 

@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { generateApiResponse } from 'src/common/responses';
-import { PrismaService } from 'src/config/database';
+import { PrismaService } from 'src/common/modules/prisma/prisma.service';
+import { generateApiResponse } from 'src/common/response';
 import { uuidv7 } from 'uuidv7';
 import { CreateDepartmentDto, UpdateDepartmentDto } from './schema';
 

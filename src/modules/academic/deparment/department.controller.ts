@@ -19,7 +19,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
 import { DepartmentService } from './department.service';
 import {
   CreateDepartmentDto,
@@ -29,7 +29,7 @@ import {
 } from './schema';
 @ApiTags('Departments')
 @Controller('/departments')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class DepartmentController {
   constructor(private readonly service: DepartmentService) {}
 

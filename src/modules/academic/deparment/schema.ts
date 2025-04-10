@@ -1,7 +1,7 @@
 // src/dtos/department.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { DepartmentStatusT } from '@prisma/client';
-import { errorMessages } from 'src/common/filters/errors-constants';
+import { errorMessages } from 'src/common/constant/errors';
 import { z } from 'zod';
 
 export const departmentSchema = z.object({
@@ -49,10 +49,6 @@ export class Department {
 
   @ApiProperty({ type: String, required: false })
   parentDepartmentId?: string;
-
-  constructor(init: Department) {
-    Object.assign(this, init);
-  }
 }
 
 export const createDepartmentDtoSchema = departmentSchema.pick({
@@ -61,7 +57,6 @@ export const createDepartmentDtoSchema = departmentSchema.pick({
   description: true,
   parentDepartmentId: true,
 });
-
 
 export type CreateDepartmentDto = z.infer<typeof createDepartmentDtoSchema>;
 

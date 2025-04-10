@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
-import { EvaluationCriteriaModule } from './evaluation-criteria/evaluation-criteria.module';
-import { ProjectEvaluationModule } from './project-evaluation/project-evaluation.module';
-
+import { CriteriaModule } from './criteria/criteria.module';
 @Module({
-  imports: [ProjectEvaluationModule, EvaluationCriteriaModule],
-  exports: [ProjectEvaluationModule, EvaluationCriteriaModule],
+  imports: [CriteriaModule],
+  exports: [CriteriaModule],
 })
 export class EvaluationModule {}

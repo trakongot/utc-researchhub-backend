@@ -22,9 +22,10 @@ import {
 } from '@nestjs/swagger';
 
 import { ReqWithRequester } from 'src/common/interface';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { ApiResponse } from 'src/common/responses';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
+import { ApiResponse } from 'src/common/response';
 
+import { ProjectAllocationService } from './project-allocation.service';
 import {
   CreateProjectAllocationDto,
   createProjectAllocationDtoSchema,
@@ -32,12 +33,11 @@ import {
   findProjectAllocationDtoSchema,
   UpdateProjectAllocationDto,
   updateProjectAllocationDtoSchema,
-} from './project-allocation.dto';
-import { ProjectAllocationService } from './project-allocation.service';
+} from './schema';
 
 @ApiTags('Project Allocation')
 @Controller('project-allocation')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class ProjectAllocationController {
   constructor(private readonly service: ProjectAllocationService) {}
 

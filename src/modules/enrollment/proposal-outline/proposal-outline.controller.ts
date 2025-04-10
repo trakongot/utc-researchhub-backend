@@ -21,20 +21,20 @@ import {
   ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
 import { ReqWithRequester } from 'src/common/interface';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { ApiResponse } from 'src/common/responses';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
+import { ApiResponse } from 'src/common/response';
+import { ProposalOutlineService } from './proposal-outline.service';
 import {
   ApproveAllocationDto,
   AutoProposeDto,
   CreateProposalOutlineDto,
   FindProposalOutlineDto,
   UpdateProposalOutlineDto,
-} from './proposal-outline.module.dto';
-import { ProposalOutlineService } from './proposal-outline.service';
+} from './schema';
 
 @ApiTags('ProposalOutline')
 @Controller('proposal-outline')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class ProposalOutlineController {
   constructor(private readonly service: ProposalOutlineService) {}
 

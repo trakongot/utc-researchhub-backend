@@ -21,7 +21,7 @@ import {
   ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
 import { ReqWithRequester } from 'src/common/interface';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
 import {
   CreateStudentSelectionDto,
   createStudentSelectionDtoSchema,
@@ -29,11 +29,11 @@ import {
   findStudentSelectionDtoSchema,
   UpdateStudentSelectionDto,
   updateStudentSelectionDtoSchema,
-} from './student-selection.dto';
+} from './schema';
 import { StudentSelectionService } from './student-selection.service';
 
 @ApiTags('Student Advising Preferences')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 @Controller('/student-advising-preferences')
 export class StudentSelectionController {
   constructor(private readonly service: StudentSelectionService) {}

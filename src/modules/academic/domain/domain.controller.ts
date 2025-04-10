@@ -21,14 +21,14 @@ import {
   ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
 import { ReqWithRequester } from 'src/common/interface';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { ApiResponse } from 'src/common/responses';
-import { CreateDomainDto, FindDomainDto, UpdateDomainDto } from './domain.dto';
+import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
+import { ApiResponse } from 'src/common/response';
 import { DomainService } from './domain.service';
+import { CreateDomainDto, FindDomainDto, UpdateDomainDto } from './schema';
 
 @ApiTags('Domain')
 @Controller('domain')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 export class DomainController {
   constructor(private readonly service: DomainService) {}
 

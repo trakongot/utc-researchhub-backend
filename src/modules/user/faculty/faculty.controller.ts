@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -20,21 +21,27 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-
 import { ZodValidationPipe } from 'nestjs-zod';
-import { ReqWithRequester } from 'src/common/interface';
+import { PermissionGuard } from 'src/modules/auth/permission.guard';
 
+import { PermissionT } from 'src/common/constant';
+import { ReqWithRequester } from 'src/common/interface';
+import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
+import { RequirePermissions } from 'src/modules/auth/permission.decorator';
+import { FacultyService } from './faculty.service';
 import {
   CreateFacultyDto,
   CreateFacultyRoleDto,
+  FacultyResponseDto,
   FindFacultyDto,
   UpdateFacultyDto,
-} from './faculty.dto';
-import { FacultyService } from './faculty.service';
+} from './schema';
 
 @ApiTags('Faculties')
 @Controller('faculties')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard, PermissionGuard)
+@ApiBearerAuth('')
 export class FacultyController {
   constructor(private readonly service: FacultyService) {}
 
@@ -44,16 +51,16 @@ export class FacultyController {
     summary: 'Create a new faculty',
     description: 'Creates a new faculty account',
   })
-  @ApiBody({ schema: {}, description: 'Faculty information' })
+  @ApiBody({ type: CreateFacultyDto, description: 'Faculty information' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Faculty created successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
+  @UseGuards(PermissionGuard)
   async create(
     @Body(new ZodValidationPipe(CreateFacultyDto))
     dto: CreateFacultyDto,
-    @Request() req: ReqWithRequester,
   ) {
     const result = await this.service.create(dto);
     return {
@@ -72,12 +79,13 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Faculty retrieved successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Faculty not found',
   })
+  @RequirePermissions(PermissionT.VIEW_FACULTY)
   async get(@Param('id') id: string) {
     const result = await this.service.get(id);
     return {
@@ -96,12 +104,13 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile retrieved successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Faculty not found',
   })
+  @RequirePermissions(PermissionT.VIEW_FACULTY)
   async getPublicProfile(@Param('id') id: string) {
     const result = await this.service.get(id);
     return {
@@ -121,17 +130,10 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile retrieved successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   async getProfile(@Request() req: ReqWithRequester) {
-    // The user ID is obtained from the authenticated user in the request
-    const userId = req.requester.sub;
-    const result = await this.service.get(userId);
-    return {
-      data: result,
-      message: 'Lấy thông tin cá nhân thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.get(req.requester.id);
   }
 
   @Get()
@@ -173,20 +175,15 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Faculties retrieved successfully',
-    schema: {},
+    type: FacultyResponseDto,
+    isArray: true,
   })
+  @RequirePermissions(PermissionT.VIEW_FACULTY)
   async find(
     @Query(new ZodValidationPipe(FindFacultyDto))
     query: FindFacultyDto,
   ) {
-    const result = await this.service.find(query);
-    return {
-      data: result.data,
-      paging: result.paging,
-      total: result.total,
-      message: 'Thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.find(query);
   }
 
   @Patch(':id')
@@ -196,30 +193,26 @@ export class FacultyController {
     description: 'Updates faculty information',
   })
   @ApiBody({
-    schema: {},
+    type: UpdateFacultyDto,
     description: 'Faculty information to update',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Faculty updated successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Faculty not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_FACULTY)
   async update(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(UpdateFacultyDto))
     dto: UpdateFacultyDto,
     @Request() req: ReqWithRequester,
   ) {
-    const result = await this.service.update(id, dto);
-    return {
-      data: result,
-      message: 'Cập nhật giảng viên thành công',
-      statusCode: HttpStatus.OK,
-    };
+    return await this.service.update(id, dto);
   }
 
   @Patch('profile/me')
@@ -230,45 +223,44 @@ export class FacultyController {
       'Updates the profile of the currently logged in faculty member',
   })
   @ApiBody({
-    schema: {},
+    type: UpdateFacultyDto,
     description: 'Faculty information to update',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile updated successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   async updateProfile(
     @Body(new ZodValidationPipe(UpdateFacultyDto))
     dto: UpdateFacultyDto,
     @Request() req: ReqWithRequester,
   ) {
-    // The user ID is obtained from the authenticated user in the request
-    const userId = req.requester.sub;
-    const result = await this.service.update(userId, dto);
-    return {
-      data: result,
-      message: 'Cập nhật thông tin cá nhân thành công',
-      statusCode: HttpStatus.OK,
-    };
+    const userId = req.requester.id;
+    return await this.service.update(userId, dto);
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Delete faculty',
-    description: 'Deletes a faculty member',
+    description: 'Deletes a faculty account',
   })
   @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
+    status: HttpStatus.OK,
     description: 'Faculty deleted successfully',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Faculty not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_FACULTY)
   async delete(@Param('id') id: string) {
     await this.service.delete(id);
+    return {
+      message: 'Xóa giảng viên thành công',
+      statusCode: HttpStatus.OK,
+    };
   }
 
   @Post(':id/roles')
@@ -277,16 +269,20 @@ export class FacultyController {
     summary: 'Add role to faculty',
     description: 'Adds a role to a faculty member',
   })
-  @ApiBody({ schema: {}, description: 'Role to add' })
+  @ApiBody({
+    type: CreateFacultyRoleDto,
+    description: 'Role to add',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Role added successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Faculty not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_FACULTY_ROLES)
   async addRole(
     @Param('id') id: string,
     @Body('role')
@@ -298,15 +294,10 @@ export class FacultyController {
       | 'LECTURER'
       | 'ADVISOR',
   ) {
-    const dto: CreateFacultyRoleDto = {
-      facultyId: id,
-      role,
-    };
-
-    const result = await this.service.addRole(dto);
+    const result = await this.service.addRole(id, role as any);
     return {
       data: result,
-      message: 'Thêm vai trò cho giảng viên thành công',
+      message: 'Thêm vai trò thành công',
       statusCode: HttpStatus.CREATED,
     };
   }
@@ -320,17 +311,18 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Role removed successfully',
-    schema: {},
+    type: FacultyResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Faculty not found',
+    description: 'Faculty or role not found',
   })
+  @RequirePermissions(PermissionT.MANAGE_FACULTY_ROLES)
   async removeRole(@Param('id') id: string, @Param('role') role: string) {
     const result = await this.service.removeRole(id, role);
     return {
       data: result,
-      message: 'Xóa vai trò của giảng viên thành công',
+      message: 'Xóa vai trò thành công',
       statusCode: HttpStatus.OK,
     };
   }

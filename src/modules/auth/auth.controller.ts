@@ -6,25 +6,42 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
-  UseGuards,
+  UsePipes,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import * as bcrypt from 'bcrypt';
-import { ZodValidationPipe } from 'src/common/pipes/zod-validation.pipe';
-import { LoginByCodeDto } from './auth.dto';
+import { ZodValidationPipe } from 'nestjs-zod';
+import { generateApiResponse } from 'src/common/response';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { RefreshTokenGuard } from './refresh-token.guard';
+import {
+  AuthResponseDto,
+  LoginByCodeDto,
+  RefreshTokenDto,
+  RefreshTokenResponseDto,
+} from './schema';
+
 @ApiTags('Authentication')
 @Controller('auth')
+@UsePipes(ZodValidationPipe)
 export class AuthController {
   constructor(private authService: AuthService) {}
+
   @Get('/generate-password/:password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'generate password' })
+  @ApiOperation({ summary: 'Generate hashed password for testing' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns hashed password',
+  })
   generatePassword(@Param('password') password: string) {
-    return bcrypt.hash(password, 10);
+    return generateApiResponse('Mật khẩu đã được mã hóa', {
+      password: bcrypt.hash(password, 10),
+    });
   }
 
   @Post('/login')
@@ -32,34 +49,59 @@ export class AuthController {
   @ApiOperation({ summary: 'Universal login for students and faculty' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Login successful and returns a token',
+    description: 'Login successful and returns tokens',
+    type: AuthResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Invalid login credentials',
   })
-  login(
-    @Body(new ZodValidationPipe(LoginByCodeDto.schema)) dto: LoginByCodeDto,
-  ) {
-    return this.authService.login(dto);
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found or inactive',
+  })
+  async login(@Body() dto: LoginByCodeDto) {
+    return generateApiResponse(
+      'Đăng nhập thành công',
+      await this.authService.login(dto),
+    );
   }
 
-  @UseGuards(RefreshTokenGuard)
   @Post('/refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  refreshToken(@Req() req) {
-    console.log(req.user);
-    const { id, refreshToken, userType } = req.user;
-    return this.authService.refreshToken(id, refreshToken, userType);
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Token refresh successful',
+    type: RefreshTokenResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid refresh token',
+  })
+  async refreshToken(@Body() dto: RefreshTokenDto) {
+    return generateApiResponse(
+      'Token đã được làm mới',
+      await this.authService.refreshToken(dto),
+    );
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('/logout')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Logout the user' })
-  logout(@Req() req) {
-    const { id, userType } = req.user;
-    return this.authService.logout(id, userType);
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Logout successful',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid token',
+  })
+  async logout(@Body() dto: RefreshTokenDto) {
+    return generateApiResponse(
+      'Đăng xuất thành công',
+      await this.authService.logout(dto.refreshToken),
+    );
   }
 }
