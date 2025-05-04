@@ -7,5 +7,6 @@ import { StudentSelectionService } from './student-selection.service';
   imports: [PrismaModule],
   controllers: [StudentSelectionController],
   providers: [StudentSelectionService],
+  exports: [StudentSelectionService],
 })
-export class StudentAdvisingPreferencesModule {}
+export class StudentSelectionModule {}

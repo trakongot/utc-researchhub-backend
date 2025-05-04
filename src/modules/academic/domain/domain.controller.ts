@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import { ReqWithRequester } from 'src/common/interface';
 import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
-import { ApiResponse } from 'src/common/response';
 import { DomainService } from './domain.service';
 import { CreateDomainDto, FindDomainDto, UpdateDomainDto } from './schema';
 
@@ -64,7 +63,7 @@ export class DomainController {
     @Body(new ZodValidationPipe(CreateDomainDto))
     dto: CreateDomainDto,
     @Request() req: ReqWithRequester,
-  ): Promise<ApiResponse<any>> {
+  ) {
     return this.service.create(dto);
   }
 
@@ -141,7 +140,7 @@ export class DomainController {
   async find(
     @Query(new ZodValidationPipe(FindDomainDto))
     query: FindDomainDto,
-  ): Promise<ApiResponse<any>> {
+  ) {
     return this.service.list(query);
   }
 
@@ -182,7 +181,7 @@ export class DomainController {
     @Body(new ZodValidationPipe(UpdateDomainDto))
     dto: UpdateDomainDto,
     @Request() req: ReqWithRequester,
-  ): Promise<ApiResponse<any>> {
+  ) {
     return this.service.update(id, dto);
   }
 
@@ -202,7 +201,7 @@ export class DomainController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid ID format',
   })
-  async delete(@Param('id') id: string): Promise<ApiResponse<any>> {
+  async delete(@Param('id') id: string) {
     return this.service.delete(id);
   }
 }

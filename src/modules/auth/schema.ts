@@ -13,7 +13,6 @@ export enum FacultyRoleT {
   LECTURER = 'LECTURER', // Regular lecturer
 }
 
-
 // Login schema with validation
 export const LoginByCodeSchema = z.object({
   code: z.string().min(1, 'Mã đăng nhập là bắt buộc'),
@@ -31,7 +30,7 @@ export const RefreshTokenSchema = z.object({
 // Login DTO with Swagger documentation
 export class LoginByCodeDto extends createZodDto(LoginByCodeSchema) {
   @ApiProperty({
-    example: '123456',
+    example: 'SIT001',
     description: 'Student or faculty code',
   })
   code: string;

@@ -43,6 +43,34 @@ export enum PermissionT {
   MANAGE_USERS = 'MANAGE_USERS',
   EDIT_USERS = 'EDIT_USERS',
   DELETE_USERS = 'DELETE_USERS',
+
+  // --- Lecturer Selection Permissions ---
+  CREATE_LECTURER_SELECTION = 'CREATE_LECTURER_SELECTION', 
+  VIEW_LECTURER_SELECTION_LIST = 'VIEW_LECTURER_SELECTION_LIST', 
+  VIEW_OWN_LECTURER_SELECTION = 'VIEW_OWN_LECTURER_SELECTION', 
+  VIEW_LECTURER_SELECTION_DETAIL = 'VIEW_LECTURER_SELECTION_DETAIL', 
+  UPDATE_LECTURER_SELECTION = 'UPDATE_LECTURER_SELECTION', 
+  UPDATE_LECTURER_SELECTION_STATUS = 'UPDATE_LECTURER_SELECTION_STATUS', 
+  DELETE_LECTURER_SELECTION = 'DELETE_LECTURER_SELECTION',
+  UPDATE_OWN_LECTURER_SELECTION_STATUS = "UPDATE_OWN_LECTURER_SELECTION_STATUS",
+  DELETE_ANY_LECTURER_SELECTION = "DELETE_ANY_LECTURER_SELECTION",
+  CREATE_STUDENT_SELECTION = "CREATE_STUDENT_SELECTION",
+  VIEW_OWN_STUDENT_SELECTION = "VIEW_OWN_STUDENT_SELECTION",
+  VIEW_STUDENT_SELECTION_DETAIL = "VIEW_STUDENT_SELECTION_DETAIL",
+  VIEW_STUDENT_SELECTION_LIST = "VIEW_STUDENT_SELECTION_LIST",
+  UPDATE_STUDENT_SELECTION = "UPDATE_STUDENT_SELECTION",
+  UPDATE_STUDENT_SELECTION_STATUS = "UPDATE_STUDENT_SELECTION_STATUS",
+  UPDATE_STUDENT_SELECTION_AS_LECTURER = "UPDATE_STUDENT_SELECTION_AS_LECTURER",
+  UPDATE_OWN_STUDENT_SELECTION_STATUS = "UPDATE_OWN_STUDENT_SELECTION_STATUS",
+  DELETE_OWN_STUDENT_SELECTION = "DELETE_OWN_STUDENT_SELECTION",
+  DELETE_STUDENT_SELECTION = "DELETE_STUDENT_SELECTION",
+  CREATE_PROJECT_ALLOCATION = "CREATE_PROJECT_ALLOCATION",
+  VIEW_PROJECT_ALLOCATION_LIST = "VIEW_PROJECT_ALLOCATION_LIST",
+  VIEW_PROJECT_ALLOCATION_DETAIL = "VIEW_PROJECT_ALLOCATION_DETAIL",
+  VIEW_PROJECT_ALLOCATION_RECOMMENDATIONS = "VIEW_PROJECT_ALLOCATION_RECOMMENDATIONS",
+  UPDATE_PROJECT_ALLOCATION = "UPDATE_PROJECT_ALLOCATION",
+  DELETE_PROJECT_ALLOCATION = "DELETE_PROJECT_ALLOCATION",
+  VIEW_PROJECT_ALLOCATION_RECOMMENDATION = "VIEW_PROJECT_ALLOCATION_RECOMMENDATION"
 }
 
 /**
@@ -96,6 +124,16 @@ export const PermissionGroups = {
     VIEW: PermissionT.VIEW_FILES,
     MANAGE: PermissionT.MANAGE_FILES,
   },
+  // --- Lecturer Selection Group ---
+  LECTURER_SELECTION: {
+    CREATE: PermissionT.CREATE_LECTURER_SELECTION,
+    VIEW_LIST: PermissionT.VIEW_LECTURER_SELECTION_LIST,
+    VIEW_OWN: PermissionT.VIEW_OWN_LECTURER_SELECTION,
+    VIEW_DETAIL: PermissionT.VIEW_LECTURER_SELECTION_DETAIL,
+    UPDATE: PermissionT.UPDATE_LECTURER_SELECTION,
+    UPDATE_STATUS: PermissionT.UPDATE_LECTURER_SELECTION_STATUS,
+    DELETE: PermissionT.DELETE_LECTURER_SELECTION,
+  },
 };
 
 /**
@@ -132,6 +170,13 @@ export const RolePermissions = {
     PermissionGroups.STUDENT.MANAGE,
     PermissionGroups.FILE.VIEW,
     PermissionGroups.FILE.MANAGE,
+    PermissionGroups.LECTURER_SELECTION.CREATE,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
+    PermissionGroups.LECTURER_SELECTION.VIEW_OWN,
+    PermissionGroups.LECTURER_SELECTION.VIEW_DETAIL,
+    PermissionGroups.LECTURER_SELECTION.UPDATE,
+    PermissionGroups.LECTURER_SELECTION.UPDATE_STATUS,
+    PermissionGroups.LECTURER_SELECTION.DELETE,
   ],
   DEAN: [
     PermissionGroups.PROPOSAL.VIEW,
@@ -149,6 +194,10 @@ export const RolePermissions = {
     PermissionGroups.SCORE.EXPORT,
     PermissionGroups.FILE.VIEW,
     PermissionGroups.FILE.MANAGE,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
+    PermissionGroups.LECTURER_SELECTION.VIEW_DETAIL,
+    PermissionGroups.LECTURER_SELECTION.UPDATE_STATUS,
+    PermissionGroups.LECTURER_SELECTION.VIEW_OWN,
   ],
   DEPARTMENT_HEAD: [
     PermissionGroups.PROPOSAL.VIEW,
@@ -160,6 +209,10 @@ export const RolePermissions = {
     PermissionGroups.SCORE.VIEW,
     PermissionGroups.FILE.VIEW,
     PermissionGroups.FILE.MANAGE,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
+    PermissionGroups.LECTURER_SELECTION.VIEW_DETAIL,
+    PermissionGroups.LECTURER_SELECTION.UPDATE_STATUS,
+    PermissionGroups.LECTURER_SELECTION.VIEW_OWN,
   ],
   ADVISOR: [
     PermissionGroups.PROPOSAL.VIEW,
@@ -168,6 +221,7 @@ export const RolePermissions = {
     PermissionGroups.OUTLINE.EDIT,
     PermissionGroups.SCORE.VIEW,
     PermissionGroups.FILE.VIEW,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
   ],
   REVIEWER: [
     PermissionGroups.OUTLINE.VIEW,
@@ -186,6 +240,12 @@ export const RolePermissions = {
     PermissionGroups.ASSIGNMENT.VIEW,
     PermissionGroups.OUTLINE.VIEW,
     PermissionGroups.FILE.VIEW,
+    PermissionGroups.LECTURER_SELECTION.CREATE,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
+    PermissionGroups.LECTURER_SELECTION.VIEW_OWN,
+    PermissionGroups.LECTURER_SELECTION.VIEW_DETAIL,
+    PermissionGroups.LECTURER_SELECTION.UPDATE,
+    PermissionGroups.LECTURER_SELECTION.DELETE,
   ],
   STUDENT: [
     PermissionGroups.PROPOSAL.CREATE,
@@ -195,6 +255,7 @@ export const RolePermissions = {
     PermissionGroups.OUTLINE.EDIT,
     PermissionGroups.SCORE.VIEW,
     PermissionGroups.FILE.VIEW,
+    PermissionGroups.LECTURER_SELECTION.VIEW_LIST,
   ],
 };
 
@@ -204,7 +265,8 @@ export const RolePermissions = {
  * @returns Array of permissions for the role
  */
 export const getPermissionsForRole = (role: string): PermissionT[] => {
-  return RolePermissions[role] || [];
+  const roleKey = role === 'STUDENT_ROLE' ? 'STUDENT' : role;
+  return RolePermissions[roleKey] || [];
 };
 
 /**
@@ -213,7 +275,10 @@ export const getPermissionsForRole = (role: string): PermissionT[] => {
  * @returns Array of unique permissions for all roles
  */
 export const getPermissionsForRoles = (roles: string[]): PermissionT[] => {
-  const permissions = roles.flatMap((role) => RolePermissions[role] || []);
+  const permissions = roles.flatMap((role) => {
+    const roleKey = role === 'STUDENT_ROLE' ? 'STUDENT' : role;
+    return RolePermissions[roleKey] || [];
+  });
   return [...new Set(permissions)]; // Remove duplicates
 };
 
@@ -227,7 +292,8 @@ export const roleHasPermission = (
   role: string,
   permission: PermissionT,
 ): boolean => {
-  return RolePermissions[role]?.includes(permission) || false;
+  const roleKey = role === 'STUDENT_ROLE' ? 'STUDENT' : role;
+  return RolePermissions[roleKey]?.includes(permission) || false;
 };
 
 /**
@@ -240,5 +306,6 @@ export const rolesHavePermission = (
   roles: string[],
   permission: PermissionT,
 ): boolean => {
-  return roles.some((role) => roleHasPermission(role, permission));
+  const userPermissions = getPermissionsForRoles(roles);
+  return userPermissions.includes(permission);
 };

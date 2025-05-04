@@ -27,14 +27,14 @@ export class FieldPoolService {
       },
     });
 
-    return generateApiResponse('Tạo field pool thành công', fieldPool);
+    return fieldPool;
   }
 
   async get(id: string) {
     const fieldPool = await this.prisma.fieldPool.findUnique({
       where: { id },
       include: {
-        FieldPoolDomain: {
+        FieldPoolDomains: {
           include: {
             Domain: true,
           },
@@ -42,9 +42,9 @@ export class FieldPoolService {
 
         _count: {
           select: {
-            LecturerSelection: true,
-            StudentSelection: true,
-            Project: true,
+            LecturerSelections: true,
+            StudentSelections: true,
+            Projects: true,
           },
         },
       },
@@ -53,12 +53,12 @@ export class FieldPoolService {
       throw new NotFoundException(`Không tìm thấy field pool với ID: ${id}`);
     }
 
-    return generateApiResponse('Lấy field pool thành công', fieldPool);
+    return fieldPool;
   }
 
-  async find(dto: FindFieldPoolDto): Promise<ApiResponse<any>> {
+  async find(dto: FindFieldPoolDto) {
     const whereClause: Prisma.FieldPoolWhereInput = {
-      FieldPoolDepartment:
+      FieldPoolDepartments:
         dto.departmentId || dto.department
           ? { some: { departmentId: dto.departmentId } }
           : undefined,
@@ -108,12 +108,12 @@ export class FieldPoolService {
           createdAt: true,
           updatedAt: true,
           longDescription: true,
-          FieldPoolDomain: {
+          FieldPoolDomains: {
             select: {
               Domain: { select: { name: true, description: true, id: true } },
             },
           },
-          FieldPoolDepartment: {
+          FieldPoolDepartments: {
             select: { Department: { select: { name: true, id: true } } },
           },
         },
@@ -130,23 +130,24 @@ export class FieldPoolService {
       total,
       totalPages: Math.ceil(total / (dto.limit || 20)),
     };
-    return generateApiResponse(
-      total > 0
-        ? 'Lấy danh sách field pool thành công'
-        : 'Không tìm thấy field pool phù hợp',
+    return {
+      message:
+        total > 0
+          ? 'Lấy danh sách field pool thành công'
+          : 'Không tìm thấy field pool phù hợp',
       data,
       pagination,
-    );
+    };
   }
 
-  async list(): Promise<ApiResponse<any>> {
+  async list() {
     const data = await this.prisma.fieldPool.findMany({
       select: {
         name: true,
         description: true,
         id: true,
         status: true,
-        FieldPoolDomain: {
+        FieldPoolDomains: {
           select: {
             Domain: { select: { name: true, description: true, id: true } },
           },
@@ -157,7 +158,7 @@ export class FieldPoolService {
     return generateApiResponse('Lấy danh sách field pool thành công', data);
   }
 
-  async update(id: string, dto: UpdateFieldPoolDto): Promise<ApiResponse<any>> {
+  async update(id: string, dto: UpdateFieldPoolDto) {
     const fieldPool = await this.prisma.fieldPool.update({
       where: { id },
       data: dto,
@@ -166,17 +167,14 @@ export class FieldPoolService {
     return generateApiResponse('Cập nhật field pool thành công', fieldPool);
   }
 
-  async delete(id: string): Promise<ApiResponse<any>> {
+  async delete(id: string) {
     await this.prisma.fieldPool.delete({ where: { id } });
 
     return generateApiResponse('Xóa field pool thành công', null);
   }
 
   // 🔵 FieldPool - Department
-  async addDept(
-    fieldPoolId: string,
-    departmentId: string,
-  ): Promise<ApiResponse<any>> {
+  async addDept(fieldPoolId: string, departmentId: string) {
     const result = await this.prisma.fieldPoolDepartment.create({
       data: { fieldPoolId, departmentId },
     });
@@ -184,10 +182,7 @@ export class FieldPoolService {
     return generateApiResponse('Thêm khoa vào field pool thành công', result);
   }
 
-  async removeDept(
-    fieldPoolId: string,
-    departmentId: string,
-  ): Promise<ApiResponse<any>> {
+  async removeDept(fieldPoolId: string, departmentId: string) {
     await this.prisma.fieldPoolDepartment.delete({
       where: { fieldPoolId_departmentId: { fieldPoolId, departmentId } },
     });
@@ -195,18 +190,19 @@ export class FieldPoolService {
     return generateApiResponse('Xóa khoa khỏi field pool thành công', null);
   }
 
-  async getDepts(fieldPoolId: string): Promise<ApiResponse<any>> {
+  async getDepts(fieldPoolId: string) {
     const departments = await this.prisma.fieldPoolDepartment.findMany({
       where: { fieldPoolId },
       include: { Department: true },
     });
 
-    return generateApiResponse(
-      departments.length > 0
-        ? 'Lấy danh sách khoa của field pool thành công'
-        : 'Field pool không có khoa nào',
-      departments,
-    );
+    return {
+      message:
+        departments.length > 0
+          ? 'Lấy danh sách khoa của field pool thành công'
+          : 'Field pool thuộc khoa nào',
+      data: departments,
+    };
   }
 
   // 🟠 FieldPool - Domain
@@ -221,10 +217,7 @@ export class FieldPoolService {
     return generateApiResponse('Thêm domain vào field pool thành công', result);
   }
 
-  async removeDomain(
-    fieldPoolId: string,
-    domainId: string,
-  ): Promise<ApiResponse<any>> {
+  async removeDomain(fieldPoolId: string, domainId: string) {
     await this.prisma.fieldPoolDomain.delete({
       where: { fieldPoolId_domainId: { fieldPoolId, domainId } },
     });
@@ -232,18 +225,19 @@ export class FieldPoolService {
     return generateApiResponse('Xóa domain khỏi field pool thành công', null);
   }
 
-  async getDomains(fieldPoolId: string): Promise<ApiResponse<any>> {
+  async getDomains(fieldPoolId: string) {
     const domains = await this.prisma.fieldPoolDomain.findMany({
       where: { fieldPoolId },
       include: { Domain: true },
     });
 
-    return generateApiResponse(
-      domains.length > 0
-        ? 'Lấy danh sách domain của field pool thành công'
-        : 'Field pool không có domain nào',
-      domains,
-    );
+    return {
+      message:
+        domains.length > 0
+          ? 'Lấy danh sách domain của field pool thành công'
+          : 'Field pool không có domain nào',
+      data: domains,
+    };
   }
 
   // 🟣 FieldPool - Lecturers
@@ -262,7 +256,7 @@ export class FieldPoolService {
     // Find all lecturers who have selections in this field pool
     const lecturers = await this.prisma.faculty.findMany({
       where: {
-        LecturerSelection: {
+        LecturerSelections: {
           some: { fieldPoolId },
         },
       },
@@ -277,7 +271,7 @@ export class FieldPoolService {
             name: true,
           },
         },
-        LecturerSelection: {
+        LecturerSelections: {
           where: { fieldPoolId },
           select: {
             id: true,

@@ -61,6 +61,7 @@ export class FacultyController {
   async create(
     @Body(new ZodValidationPipe(CreateFacultyDto))
     dto: CreateFacultyDto,
+    @Request() req: ReqWithRequester,
   ) {
     const result = await this.service.create(dto);
     return {
@@ -212,7 +213,8 @@ export class FacultyController {
     dto: UpdateFacultyDto,
     @Request() req: ReqWithRequester,
   ) {
-    return await this.service.update(id, dto);
+    const userId = req.requester.id;
+    return await this.service.update(userId, dto);
   }
 
   @Patch('profile/me')

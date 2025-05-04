@@ -10,23 +10,30 @@ const uploadFileSchema = z.object({
 const updateFileSchema = z.object({
   isArchived: z.boolean().optional().default(false),
   description: z.string().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 const uploadAvatarSchema = z.object({
   file: z
     .instanceof(Buffer)
-    .refine((file) => {
-      if (!file || typeof file !== 'object') return false;
-      return (file as any).mimetype?.startsWith('image/');
-    }, {
-      message: 'Only image files are allowed',
-    })
-    .refine((file) => {
-      if (!file || typeof file !== 'object') return false;
-      return (file as any).size <= MAX_FILE_SIZE;
-    }, {
-      message: `File size must not exceed ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-    }),
+    .refine(
+      (file) => {
+        if (!file || typeof file !== 'object') return false;
+        return (file as any).mimetype?.startsWith('image/');
+      },
+      {
+        message: 'Only image files are allowed',
+      },
+    )
+    .refine(
+      (file) => {
+        if (!file || typeof file !== 'object') return false;
+        return (file as any).size <= MAX_FILE_SIZE;
+      },
+      {
+        message: `File size must not exceed ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      },
+    ),
 });
 
 const uploadProposalSchema = z.object({
@@ -42,12 +49,21 @@ const uploadProjectReportSchema = z.object({
 });
 
 const fileResponseSchema = z.object({
-  filename: z.string(),
+  id: z.string().uuid(),
+  fileName: z.string(),
   originalName: z.string(),
-  size: z.number(),
+  filePath: z.string().nullable(),
+  fileType: z.nativeEnum(FileT),
   mimeType: z.string(),
-  path: z.string(),
-  url: z.string(),
+  fileSize: z.number().int(),
+  checksum: z.string().optional().nullable(),
+  uploadedByStudentId: z.string().uuid().optional().nullable(),
+  uploadedByFacultyId: z.string().uuid().optional().nullable(),
+  uploadedAt: z.date(),
+  lastAccessed: z.date().optional().nullable(),
+  isPublic: z.boolean(),
+  isArchived: z.boolean(),
+  metadata: z.record(z.any()).optional().nullable(),
 });
 
 const projectReportFileSchema = z.object({

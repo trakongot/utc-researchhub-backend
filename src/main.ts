@@ -8,21 +8,21 @@ import { HttpExceptionFilter } from './exception-filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Kích hoạt global filter để xử lý ngoại lệ
+  // Enable global filter for handling exceptions
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // Tăng giới hạn kích thước file upload (50MB)
+  // Increase file upload size limit (50MB)
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
 
-  // Thiết lập Swagger
+  // Set up Swagger
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  // Kích hoạt CORS
+  // Enable CORS
   app.enableCors();
 
-  // Xử lý lỗi chưa được bắt để ngăn server crash
+  // Handle uncaught errors to prevent server crash
   process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
   });
@@ -31,7 +31,7 @@ async function bootstrap() {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   });
 
-  // Khởi động ứng dụng
+  // Start the application
   await app.listen(config.port);
   console.log(`
   ------------------------------------------------------------
@@ -41,5 +41,5 @@ async function bootstrap() {
   `);
 }
 
-// Gọi bootstrap và xử lý lỗi nếu có
+// Call bootstrap and handle errors if any
 bootstrap().catch((err) => console.error('Bootstrap failed:', err));

@@ -9,6 +9,7 @@ export interface TokenPayload {
 export interface AuthPayload extends TokenPayload {
   roles: string[];
   permissions?: PermissionT[];
+  departmentId?: string;
 }
 
 // extend interface Request

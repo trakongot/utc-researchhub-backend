@@ -10,210 +10,321 @@ import {
   Post,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiBody,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
   ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
+import { PermissionT } from 'src/common/constant/permissions';
 import { ReqWithRequester } from 'src/common/interface';
 import { ZodValidationPipe } from 'src/common/pipe/zod-validation.pipe';
+import { ApiResponse, generateApiResponse } from 'src/common/response';
+import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
+import { RequirePermissions } from 'src/modules/auth/permission.decorator';
+import { PermissionGuard } from 'src/modules/auth/permission.guard';
 import {
   CreateStudentSelectionDto,
-  createStudentSelectionDtoSchema,
   FindStudentSelectionDto,
-  findStudentSelectionDtoSchema,
   UpdateStudentSelectionDto,
+  UpdateStudentSelectionStatusDto,
+  createStudentSelectionDtoSchema,
+  findStudentSelectionDtoSchema,
   updateStudentSelectionDtoSchema,
+  updateStudentSelectionStatusDtoSchema,
 } from './schema';
 import { StudentSelectionService } from './student-selection.service';
 
-@ApiTags('Student Advising Preferences')
+@ApiTags('Student Selection')
+@Controller('student-selection')
 @ApiBearerAuth('access-token')
-@Controller('/student-advising-preferences')
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class StudentSelectionController {
   constructor(private readonly service: StudentSelectionService) {}
 
   @Post()
+  @RequirePermissions(PermissionT.CREATE_STUDENT_SELECTION)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a new student selection preference' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        studentId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174000',
-        },
-        facultyMemberId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174001',
-        },
-        fieldId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174002',
-        },
-      },
-      required: ['studentId', 'facultyMemberId', 'fieldId'],
-    },
-  })
-  @SwaggerApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Student selection preference created successfully',
-  })
+  @ApiOperation({ summary: '[Student] Create a new selection preference' })
+  @SwaggerApiResponse({ status: HttpStatus.CREATED, description: 'Created' })
   @SwaggerApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
+    description: 'Bad Request',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
   })
   async create(
     @Body(new ZodValidationPipe(createStudentSelectionDtoSchema))
     dto: CreateStudentSelectionDto,
     @Request() req: ReqWithRequester,
-  ) {
-    return this.service.create(dto);
+  ): Promise<ApiResponse<any>> {
+    const result = await this.service.create(dto, req.requester.id);
+    return generateApiResponse(
+      'Sinh viên đăng ký nguyện vọng thành công',
+      result,
+    );
+  }
+
+  @Get('me')
+  @RequirePermissions(PermissionT.VIEW_OWN_STUDENT_SELECTION)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Student] Get my selection preferences' })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'OK' })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async findMine(
+    @Query(new ZodValidationPipe(findStudentSelectionDtoSchema))
+    query: FindStudentSelectionDto,
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const specificQuery = { ...query, studentId: req.requester.id };
+    const result = await this.service.find(specificQuery, req.requester);
+    return generateApiResponse('Lấy danh sách nguyện vọng thành công', result);
   }
 
   @Get(':id')
+  @RequirePermissions(PermissionT.VIEW_STUDENT_SELECTION_DETAIL)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get a student selection preference by ID' })
-  @ApiParam({ name: 'id', description: 'Student Selection Preference ID' })
-  @SwaggerApiResponse({
-    status: HttpStatus.OK,
-    description: 'Student selection preference found',
+  @ApiOperation({
+    summary: '[Student, Lecturer, TBM, Dean] Get a student selection by ID',
   })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'OK' })
   @SwaggerApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Student selection preference not found',
+    description: 'Not Found',
   })
   @SwaggerApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid ID format',
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
   })
-  async get(@Param('id') id: string) {
-    return this.service.get(id);
+  async get(@Param('id') id: string): Promise<ApiResponse<any>> {
+    const data = await this.service.get(id);
+    return generateApiResponse(
+      'Lấy thông tin đăng ký nguyện vọng thành công',
+      data,
+    );
   }
 
   @Get()
+  @RequirePermissions(PermissionT.VIEW_STUDENT_SELECTION_LIST)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Find student selection preferences with filtering options',
+    summary: '[All Roles] Find student selections (filtered by role)',
   })
-  @ApiQuery({ name: 'studentId', required: false, description: 'Student ID' })
-  @ApiQuery({
-    name: 'facultyMemberId',
-    required: false,
-    description: 'Faculty Member ID',
-  })
-  @ApiQuery({ name: 'fieldId', required: false, description: 'Field ID' })
-  @ApiQuery({ name: 'keyword', required: false, description: 'Search keyword' })
-  @ApiQuery({
-    name: 'orderBy',
-    required: false,
-    enum: ['createdAt', 'updatedAt'],
-    description: 'Field to order by',
-  })
-  @ApiQuery({
-    name: 'asc',
-    required: false,
-    enum: ['asc', 'desc'],
-    description: 'Sort direction',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-  })
-  @ApiQuery({
-    name: 'departmentId',
-    required: false,
-    description: 'Department ID',
-  })
-  @SwaggerApiResponse({
-    status: HttpStatus.OK,
-    description: 'List of student selection preferences',
-  })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'OK' })
   @SwaggerApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid parameter format',
+    description: 'Bad Request',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
   })
   async find(
     @Query(new ZodValidationPipe(findStudentSelectionDtoSchema))
     query: FindStudentSelectionDto,
-  ) {
-    return this.service.find(query, query.page, query.limit);
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.service.find(query, req.requester);
+    return generateApiResponse('Lấy danh sách nguyện vọng thành công', result);
   }
 
   @Patch(':id')
+  @RequirePermissions(PermissionT.UPDATE_STUDENT_SELECTION)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update a student selection preference' })
-  @ApiParam({ name: 'id', description: 'Student Selection Preference ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        studentId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174000',
-        },
-        facultyMemberId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174001',
-        },
-        fieldId: {
-          type: 'string',
-          example: '123e4567-e89b-12d3-a456-426614174002',
-        },
-      },
-    },
+  @ApiOperation({
+    summary: '[Student] Update own selection preference content',
   })
-  @SwaggerApiResponse({
-    status: HttpStatus.OK,
-    description: 'Student selection preference updated successfully',
-  })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'OK' })
   @SwaggerApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Student selection preference not found',
+    description: 'Not Found',
   })
   @SwaggerApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data or ID format',
+    description: 'Bad Request',
   })
-  async update(
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async updateByOwner(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateStudentSelectionDtoSchema))
     dto: UpdateStudentSelectionDto,
-  ) {
-    return this.service.update(id, dto);
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const updatedSelection = await this.service.updateByOwner(
+      id,
+      dto,
+      req.requester.id,
+    );
+    return generateApiResponse(
+      'Cập nhật đăng ký nguyện vọng thành công',
+      updatedSelection,
+    );
   }
 
-  @Delete(':id')
+  @Patch(':id/status/admin')
+  @RequirePermissions(PermissionT.UPDATE_STUDENT_SELECTION_STATUS)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a student selection preference' })
-  @ApiParam({ name: 'id', description: 'Student Selection Preference ID' })
-  @SwaggerApiResponse({
-    status: HttpStatus.OK,
-    description: 'Student selection preference deleted successfully',
+  @ApiOperation({
+    summary: '[TBM, Dean] Update student selection status (Admin)',
   })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'Status updated' })
   @SwaggerApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Student selection preference not found',
+    description: 'Not Found',
   })
   @SwaggerApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid ID format',
+    description: 'Bad Request',
   })
-  async delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async updateStatusByAdmin(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateStudentSelectionStatusDtoSchema))
+    dto: UpdateStudentSelectionStatusDto,
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.service.updateStatusByAdmin(
+      id,
+      dto,
+      req.requester.id,
+    );
+    return generateApiResponse(
+      'Cập nhật trạng thái nguyện vọng thành công',
+      result,
+    );
+  }
+
+  @Patch(':id/status/lecturer')
+  @RequirePermissions(PermissionT.UPDATE_STUDENT_SELECTION_AS_LECTURER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '[Lecturer] Update student selection status as lecturer',
+  })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'Status updated' })
+  @SwaggerApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Not Found',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Bad Request',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async updateStatusByLecturer(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateStudentSelectionStatusDtoSchema))
+    dto: UpdateStudentSelectionStatusDto,
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.service.updateStatusByLecturer(
+      id,
+      dto,
+      req.requester.id,
+    );
+    return generateApiResponse(
+      'Cập nhật trạng thái nguyện vọng thành công',
+      result,
+    );
+  }
+
+  @Patch(':id/status/owner')
+  @RequirePermissions(PermissionT.UPDATE_OWN_STUDENT_SELECTION_STATUS)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Student] Update own selection status' })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'Status updated' })
+  @SwaggerApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Not Found',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Bad Request',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async updateStatusByOwner(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateStudentSelectionStatusDtoSchema))
+    dto: UpdateStudentSelectionStatusDto,
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    const result = await this.service.updateStatusByOwner(
+      id,
+      dto,
+      req.requester.id,
+    );
+    return generateApiResponse(
+      'Cập nhật trạng thái nguyện vọng thành công',
+      result,
+    );
+  }
+
+  @Delete(':id')
+  @RequirePermissions(PermissionT.DELETE_OWN_STUDENT_SELECTION)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[Student] Delete own selection preference' })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'Deleted' })
+  @SwaggerApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Not Found',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Bad Request',
+  })
+  async deleteByOwner(
+    @Param('id') id: string,
+    @Request() req: ReqWithRequester,
+  ): Promise<ApiResponse<any>> {
+    await this.service.deleteByOwner(id, req.requester.id);
+    return generateApiResponse('Xóa đăng ký nguyện vọng thành công', null);
+  }
+
+  @Delete(':id/admin')
+  @RequirePermissions(PermissionT.DELETE_STUDENT_SELECTION)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[TBM, Dean] Delete any student selection (Admin)' })
+  @ApiParam({ name: 'id', description: 'Student Selection ID', type: String })
+  @SwaggerApiResponse({ status: HttpStatus.OK, description: 'Deleted' })
+  @SwaggerApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Not Found',
+  })
+  @SwaggerApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden',
+  })
+  async deleteByAdmin(@Param('id') id: string): Promise<ApiResponse<any>> {
+    await this.service.deleteByAdmin(id);
+    return generateApiResponse('Xóa đăng ký nguyện vọng thành công', null);
   }
 }

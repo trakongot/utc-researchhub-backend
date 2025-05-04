@@ -3,6 +3,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { StorageController } from './storage.controller';
 import { StorageService, StorageConfig } from './storage.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 
 @Global()
 @Module({
@@ -17,7 +18,8 @@ import { PrismaService } from '../prisma/prisma.service';
           baseUrl: process.env.BASE_URL || 'http://localhost:4000',
         };
 
-        return new StorageService(prisma, storageConfig);
+        const configService = new ConfigService(storageConfig as Record<string, unknown>);
+        return new StorageService(prisma, configService);
       },
       inject: [PrismaService],
     },

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -32,7 +31,7 @@ export class DepartmentService {
       throw new NotFoundException('Không tìm thấy khoa với ID này.');
     }
 
-    return generateApiResponse('Lấy thông tin khoa thành công', department);
+    return department;
   }
 
   async list(page: number, limit: number) {
@@ -52,12 +51,17 @@ export class DepartmentService {
       },
     });
     const total = await this.prisma.department.count();
-
-    return generateApiResponse('Lấy danh sách khoa thành công', data, {
+    const totalPages = Math.ceil(total / limit);
+    const pagination = {
       page,
       limit,
       total,
-    });
+      totalPages,
+    };
+    return {
+      data,
+      pagination,
+    };
   }
 
   async create(dto: CreateDepartmentDto) {
@@ -135,11 +139,11 @@ export class DepartmentService {
       },
     });
 
-    return generateApiResponse('Cập nhật khoa thành công', updatedDepartment);
+    return updatedDepartment;
   }
 
   async delete(id: string) {
-    const department = await this.prisma.department.findUnique({
+    const department = await this.prisma.department.findFirst({
       where: { id },
     });
 
@@ -147,37 +151,12 @@ export class DepartmentService {
       throw new NotFoundException('Không tìm thấy khoa với ID này.');
     }
 
-    const childDepartments = await this.prisma.department.findFirst({
-      where: { parentDepartmentId: id },
+    await this.prisma.department.update({
+      where: { id },
+      data: {
+        status: 'INACTIVE',
+      },
     });
-
-    if (childDepartments) {
-      throw new BadRequestException(
-        'Không thể xóa khoa này vì có khoa con. Vui lòng xóa các khoa con trước.',
-      );
-    }
-
-    const students = await this.prisma.student.findFirst({
-      where: { departmentId: id },
-    });
-
-    if (students) {
-      throw new BadRequestException(
-        'Không thể xóa khoa này vì có sinh viên. Vui lòng chuyển sinh viên sang khoa khác trước.',
-      );
-    }
-
-    const faculty = await this.prisma.faculty.findFirst({
-      where: { departmentId: id },
-    });
-
-    if (faculty) {
-      throw new BadRequestException(
-        'Không thể xóa khoa này vì có giảng viên. Vui lòng chuyển giảng viên sang khoa khác trước.',
-      );
-    }
-
-    await this.prisma.department.delete({ where: { id } });
-    return generateApiResponse('Xóa khoa thành công', null);
+    return null;
   }
 }

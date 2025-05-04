@@ -5,7 +5,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { config } from 'src/common/config';
 import {
   getPermissionsForRoles,
-  PermissionT,
   RolePermissions,
 } from '../../common/constant/permissions';
 import { AuthPayload, TokenPayload } from '../../common/interface';
@@ -21,51 +20,59 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  /**
-   * Validate JWT token payload and fetch current user information
-   * This method is called automatically by Passport.js after token verification
-   */
   async validate(payload: TokenPayload): Promise<AuthPayload> {
-    let userExists = false;
-    let roles: string[] = [];
-    let permissions: string[] = [];
+    if (!payload?.id || !payload?.userType) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
 
-    // Handle student authentication
-    if (payload.userType === UserT.STUDENT) {
+    const userType = payload.userType as UserT;
+
+    if (userType === UserT.STUDENT) {
       const student = await this.prisma.student.findUnique({
         where: { id: payload.id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, departmentId: true },
       });
-      userExists = !!student && student.status === 'ACTIVE';
-      roles = ['STUDENT'];
-      permissions = RolePermissions.STUDENT || [];
+
+      if (!student || student.status !== 'ACTIVE') {
+        throw new UnauthorizedException('Student not found or inactive');
+      }
+
+      return {
+        id: payload.id,
+        userType,
+        roles: ['STUDENT'],
+        permissions: RolePermissions.STUDENT,
+        departmentId: student.departmentId || undefined,
+      };
     }
-    // Handle faculty authentication
-    else if (payload.userType === UserT.FACULTY) {
+
+    if (userType === UserT.FACULTY) {
       const faculty = await this.prisma.faculty.findUnique({
         where: { id: payload.id },
         select: {
           id: true,
           status: true,
-          FacultyRole: { select: { role: true } },
+          FacultyRoles: { select: { role: true } },
+          departmentId: true,
         },
       });
-      userExists = !!faculty && faculty.status === 'ACTIVE';
-      roles = faculty?.FacultyRole?.map((r) => r.role) || [];
-      permissions = getPermissionsForRoles(roles);
+
+      if (!faculty || faculty.status !== 'ACTIVE') {
+        throw new UnauthorizedException('Faculty not found or inactive');
+      }
+
+      const roles = faculty.FacultyRoles.map((r) => r.role) || [];
+      const permissions = getPermissionsForRoles(roles);
+
+      return {
+        id: payload.id,
+        userType,
+        roles,
+        permissions,
+        departmentId: faculty.departmentId || undefined,
+      };
     }
 
-    // Throw exception if user doesn't exist or is inactive
-    if (!userExists) {
-      throw new UnauthorizedException('Tài khoản không tồn tại hoặc đã bị khóa');
-    }
-
-    // Return authenticated user data with roles and permissions
-    return {
-      id: payload.id,
-      userType: payload.userType,
-      roles,
-      permissions: permissions as PermissionT[],
-    };
+    throw new UnauthorizedException('Token không đúng');
   }
 }

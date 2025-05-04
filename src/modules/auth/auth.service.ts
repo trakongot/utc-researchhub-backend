@@ -26,7 +26,7 @@ export class AuthService {
         : await this.studentService.authenticate(code, password);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Không tìm thấy tài khoản');
     }
 
     const roles =
@@ -82,7 +82,9 @@ export class AuthService {
       });
     } catch (error) {
       throw new UnauthorizedException(
-        error.name === 'TokenExpiredError' ? 'Token hết hạn' : 'Token không hợp lệ',
+        error.name === 'TokenExpiredError'
+          ? 'Token hết hạn'
+          : 'Token không hợp lệ',
       );
     }
 
@@ -99,7 +101,9 @@ export class AuthService {
 
     // Verify user exists and has refresh token
     if (!user || !user.refreshToken) {
-      throw new UnauthorizedException('Tài khoản không tồn tại hoặc không có token làm mới');
+      throw new UnauthorizedException(
+        'Tài khoản không tồn tại hoặc không có token làm mới',
+      );
     }
 
     // Optionally verify stored hash matches provided token

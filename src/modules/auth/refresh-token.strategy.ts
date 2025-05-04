@@ -1,4 +1,3 @@
-// src/modules/auth/refresh-token.strategy.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { UserT } from '@prisma/client';
@@ -25,77 +24,60 @@ export class RefreshTokenStrategy extends PassportStrategy(
   async validate(req: any, payload: TokenPayload): Promise<AuthPayload> {
     const refreshToken = req.body.refreshToken;
     if (!refreshToken) {
-      throw new UnauthorizedException('Token làm mới hết hạn');
+      throw new UnauthorizedException('Refresh token không tồn tại');
     }
 
-    if (!payload || !payload.id || !payload.userType) {
-      throw new UnauthorizedException('Token làm mới không hợp lệ');
+    if (!payload?.id || !payload?.userType) {
+      throw new UnauthorizedException('Token không hợp lệ');
     }
+
     const userType = payload.userType as UserT;
-    let user;
 
-    try {
-      if (userType === UserT.STUDENT) {
-        user = await this.prisma.student.findUnique({
-          where: { id: payload.id },
-          select: {
-            id: true,
-            email: true,
-            refreshToken: true,
-          },
-        });
-      } else if (userType === UserT.FACULTY) {
-        user = await this.prisma.faculty.findUnique({
-          where: { id: payload.id, status: 'ACTIVE' },
-          select: {
-            id: true,
-            email: true,
-            refreshToken: true,
-            FacultyRole: { select: { role: true } },
-          },
-        });
-      } else {
-        throw new UnauthorizedException('Loại tài khoản không hợp lệ');
-      }
+    const user =
+      userType === UserT.STUDENT
+        ? await this.prisma.student.findUnique({
+            where: { id: payload.id },
+            select: { id: true, email: true, refreshToken: true },
+          })
+        : userType === UserT.FACULTY
+          ? await this.prisma.faculty.findUnique({
+              where: { id: payload.id, status: 'ACTIVE' },
+              select: {
+                id: true,
+                email: true,
+                refreshToken: true,
+                FacultyRoles: { select: { role: true } },
+              },
+            })
+          : null;
 
-      // Check if user exists and has refresh token
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException(
-          'Không tìm thấy tài khoản hoặc không có token làm mới',
-        );
-      }
-
-      // Verify refresh token matches stored hash
-      const isRefreshTokenValid = await bcrypt.compare(
-        refreshToken,
-        user.refreshToken,
+    if (!user || !user.refreshToken) {
+      throw new UnauthorizedException(
+        'Không tìm thấy tài khoản hoặc refresh token không tồn tại',
       );
-
-      if (!isRefreshTokenValid) {
-        throw new UnauthorizedException('Token làm mới không hợp lệ');
-      }
-
-      // Get user roles
-      const roles =
-        userType === UserT.FACULTY
-          ? (user as any)?.FacultyRole?.map((r) => r.role) || []
-          : ['STUDENT'];
-
-      // Get permissions for roles
-      const permissions = getPermissionsForRoles(roles);
-
-      // Return full validated user data
-      return {
-        id: user.id,
-        userType,
-        roles,
-        permissions,
-      };
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new UnauthorizedException('Lỗi token làm mới');
     }
+
+    const isRefreshTokenValid = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+
+    if (!isRefreshTokenValid) {
+      throw new UnauthorizedException('Refresh token không hợp lệ');
+    }
+
+    const roles =
+      userType === UserT.FACULTY
+        ? (user as any)?.FacultyRole?.map((r) => r.role) || []
+        : ['STUDENT'];
+
+    const permissions = getPermissionsForRoles(roles);
+
+    return {
+      id: user.id,
+      userType,
+      roles,
+      permissions,
+    };
   }
 }

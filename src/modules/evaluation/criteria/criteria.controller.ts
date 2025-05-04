@@ -18,13 +18,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { PermissionT } from 'src/common/constant/permissions';
 import {
   ApiResponse as CustomApiResponse,
   generateApiResponse,
 } from 'src/common/response';
 import { JwtAuthGuard } from 'src/modules/auth/jwt-auth.guard';
-import { RequirePermissions } from 'src/modules/auth/permission.decorator';
 import { PermissionGuard } from 'src/modules/auth/permission.guard';
 
 import { ReqWithRequester } from 'src/common/interface';

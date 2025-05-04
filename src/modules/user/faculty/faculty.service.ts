@@ -34,7 +34,7 @@ export class FacultyService {
         },
         include: {
           Department: true,
-          FacultyRole: true,
+          FacultyRoles: true,
         },
       });
 
@@ -56,7 +56,7 @@ export class FacultyService {
         where: { id: faculty.id },
         include: {
           Department: true,
-          FacultyRole: true,
+          FacultyRoles: true,
         },
       });
     });
@@ -76,7 +76,7 @@ export class FacultyService {
         fullName: true,
         facultyCode: true,
         Department: true,
-        FacultyRole: true,
+        FacultyRoles: true,
       },
     });
 
@@ -140,7 +140,7 @@ export class FacultyService {
         where: whereClause,
         include: {
           Department: true,
-          FacultyRole: true,
+          FacultyRoles: true,
         },
         skip,
         take: dto.limit,
@@ -183,7 +183,7 @@ export class FacultyService {
       data: { ...dto },
       include: {
         Department: true,
-        FacultyRole: true,
+        FacultyRoles: true,
       },
     });
 
@@ -194,7 +194,7 @@ export class FacultyService {
     const existingFaculty = await this.prisma.faculty.findUnique({
       where: { id },
       include: {
-        FacultyRole: true,
+        FacultyRoles: true,
       },
     });
 
@@ -205,7 +205,7 @@ export class FacultyService {
     // Delete in a transaction to handle roles
     await this.prisma.$transaction(async (tx) => {
       // Delete faculty roles first
-      if (existingFaculty.FacultyRole.length > 0) {
+      if (existingFaculty.FacultyRoles.length > 0) {
         await tx.facultyRole.deleteMany({
           where: {
             facultyId: id,
@@ -251,7 +251,7 @@ export class FacultyService {
       where: { id: facultyId },
       include: {
         Department: true,
-        FacultyRole: true,
+        FacultyRoles: true,
       },
     });
 
@@ -290,7 +290,7 @@ export class FacultyService {
       where: { id: facultyId },
       include: {
         Department: true,
-        FacultyRole: true,
+        FacultyRoles: true,
       },
     });
 
@@ -308,7 +308,7 @@ export class FacultyService {
         profilePicture: true,
         fullName: true,
         facultyCode: true,
-        FacultyRole: { select: { role: true } },
+        FacultyRoles: { select: { role: true } },
       },
     });
 

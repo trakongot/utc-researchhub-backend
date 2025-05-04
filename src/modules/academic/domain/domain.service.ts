@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/common/modules/prisma/prisma.service';
-import { generateApiResponse } from 'src/common/response';
 import { uuidv7 } from 'uuidv7';
 import { CreateDomainDto, FindDomainDto, UpdateDomainDto } from './schema';
 
@@ -18,7 +17,7 @@ export class DomainService {
       },
     });
 
-    return generateApiResponse('Tạo domain thành công', domain);
+    return domain;
   }
 
   async get(id: string) {
@@ -27,7 +26,7 @@ export class DomainService {
       throw new NotFoundException(`Không tìm thấy domain với ID: ${id}`);
     }
 
-    return generateApiResponse('Lấy domain thành công', domain);
+    return domain;
   }
 
   async list(dto: FindDomainDto) {
@@ -74,13 +73,10 @@ export class DomainService {
     const totalPages = Math.ceil(total / limit);
     const pagination = { page, limit, total, totalPages };
 
-    return generateApiResponse(
-      total > 0
-        ? 'Lấy danh sách domain thành công'
-        : 'Không tìm thấy domain phù hợp',
+    return {
       data,
       pagination,
-    );
+    };
   }
 
   async update(id: string, dto: UpdateDomainDto) {
@@ -96,7 +92,7 @@ export class DomainService {
       data: { ...dto },
     });
 
-    return generateApiResponse('Cập nhật domain thành công', updatedDomain);
+    return updatedDomain;
   }
 
   async delete(id: string) {
@@ -109,6 +105,6 @@ export class DomainService {
 
     await this.prisma.domain.delete({ where: { id } });
 
-    return generateApiResponse('Xóa domain thành công', null);
+    return null;
   }
 }

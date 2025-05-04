@@ -1,6 +1,7 @@
 // src/dtos/department.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { DepartmentStatusT } from '@prisma/client';
+import { createZodDto } from 'nestjs-zod';
 import { errorMessages } from 'src/common/constant/errors';
 import { z } from 'zod';
 
@@ -15,16 +16,6 @@ export const departmentSchema = z.object({
   parentDepartmentId: z.string().optional(),
 });
 
-// export class Department extends Z.class({
-//   id: z.string(),
-//   departmentCode: z.string().min(1, errorMessages.required('Mã khoa')),
-//   name: z.string().min(1, errorMessages.required('Tên khoa')),
-//   description: z.string().optional(),
-//   status: z.nativeEnum(DepartmentStatusT).default(DepartmentStatusT.ACTIVE),
-//   createdAt: z.date({ invalid_type_error: 'Ngày tạo không hợp lệ' }),
-//   updatedAt: z.date({ invalid_type_error: 'Ngày cập nhật không hợp lệ' }),
-//   parentDepartmentId: z.string().optional(),
-// }) {}
 export class Department {
   @ApiProperty({ type: String })
   id: string;
@@ -58,7 +49,9 @@ export const createDepartmentDtoSchema = departmentSchema.pick({
   parentDepartmentId: true,
 });
 
-export type CreateDepartmentDto = z.infer<typeof createDepartmentDtoSchema>;
+export class CreateDepartmentDto extends createZodDto(
+  createDepartmentDtoSchema,
+) {}
 
 export const updateDepartmentDtoSchema = departmentSchema
   .pick({
@@ -70,4 +63,6 @@ export const updateDepartmentDtoSchema = departmentSchema
   })
   .partial();
 
-export type UpdateDepartmentDto = z.infer<typeof updateDepartmentDtoSchema>;
+export class UpdateDepartmentDto extends createZodDto(
+  updateDepartmentDtoSchema,
+) {}

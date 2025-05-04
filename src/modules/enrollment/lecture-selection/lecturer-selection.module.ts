@@ -8,4 +8,4 @@ import { LecturerSelectionService } from './lecturer-selection.service';
   providers: [LecturerSelectionService],
   controllers: [LecturerSelectionController],
 })
-export class LecturerPreferencesModule {}
+export class LecturerSelectionModule {}

@@ -27,9 +27,9 @@ export class LogService {
         oldValue: data.oldValue,
         newValue: data.newValue,
         metadata: data.metadata ? JSON.stringify(data.metadata) : undefined,
-        userId: data.userId,
-        userType: data.userType,
-        departmentId: data.departmentId,
+        // userId: data.userId,
+        // userType: data.userType,
+        // departmentId: data.departmentId,
       },
     });
   }
@@ -43,49 +43,20 @@ export class LogService {
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        CreatedByStudent: {
-          select: {
-            id: true,
-            fullName: true,
-            studentCode: true,
-          },
-        },
-        CreatedByFaculty: {
-          select: {
-            id: true,
-            fullName: true,
-            facultyCode: true,
-            FacultyRole: true,
-          },
-        },
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      include: {},
     });
   }
 
   async getLogsByUser(userId: string, userType: UserT) {
     return this.prisma.auditLog.findMany({
       where: {
-        userId,
-        userType,
+        // userId,
+        // userType,
       },
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      include: {},
     });
   }
 
@@ -97,23 +68,7 @@ export class LogService {
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        CreatedByStudent: {
-          select: {
-            id: true,
-            fullName: true,
-            studentCode: true,
-          },
-        },
-        CreatedByFaculty: {
-          select: {
-            id: true,
-            fullName: true,
-            facultyCode: true,
-            FacultyRole: true,
-          },
-        },
-      },
+      include: {},
     });
   }
 
@@ -160,29 +115,7 @@ export class LogService {
       orderBy: {
         createdAt: 'desc',
       },
-      include: {
-        CreatedByStudent: {
-          select: {
-            id: true,
-            fullName: true,
-            studentCode: true,
-          },
-        },
-        CreatedByFaculty: {
-          select: {
-            id: true,
-            fullName: true,
-            facultyCode: true,
-            FacultyRole: true,
-          },
-        },
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+
       take: 100,
     });
   }
